@@ -4,7 +4,7 @@
 import { describe, expect, it } from "vitest";
 import { createBeaconState, setLatestFix } from "../src/state.js";
 import { decide, startSendLoop } from "../src/sendLoop.js";
-import { FakeHubClient, createFakeRest } from "./fakes.js";
+import { FakeHubClient, createFakeRest } from "../src/testing.js";
 
 const FIX = {
   lat: 46.87,

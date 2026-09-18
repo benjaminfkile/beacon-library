@@ -4,7 +4,7 @@
 import { describe, expect, it } from "vitest";
 import { startSocketLoop } from "../src/socketLoop.js";
 import { createBeaconState } from "../src/state.js";
-import { FakeHubClient } from "./fakes.js";
+import { FakeHubClient } from "../src/testing.js";
 import { BACKOFF_MS, JOIN_DENIED_FIRST_WAIT_MS, backoffMs } from "../src/backoff.js";
 
 function yieldMacrotask(): Promise<void> {
@@ -304,6 +304,38 @@ describe("hub ChannelEvent envelope routing (contracts 2.3, 9.2)", () => {
     await loop.stop();
   });
 
+  it("re-invokes JoinPrivateChannel exactly once on every one of five freshly built connections", async () => {
+    const state = createBeaconState();
+    const built: CountingHub[] = [];
+    const loop = startSocketLoop({
+      build: () => {
+        const h = new CountingHub();
+        built.push(h);
+        return h;
+      },
+      ingestChannel: "x:ingest",
+      key: "wbk_x",
+      state,
+      sleep: yieldMacrotask,
+    });
+    await drain();
+    expect(state.socketState).toBe("connected");
+    expect(built[0]!.joinCount).toBe(1);
+
+    for (let i = 0; i < 5; i++) {
+      built[built.length - 1]!.triggerClose(new Error("bounce"));
+      for (let j = 0; j < 200 && (built.length <= i + 1 || state.socketState !== "connected"); j++) {
+        await yieldMacrotask();
+      }
+      expect(built[built.length - 1]!.joinCount).toBe(1);
+      expect(state.socketState).toBe("connected");
+    }
+
+    expect(built.length).toBe(6);
+    for (const h of built) expect(h.joinCount).toBe(1);
+    await loop.stop();
+  });
+
   it("re-invokes JoinPrivateChannel on the freshly built connection after a reconnect", async () => {
     const state = createBeaconState();
     const built: CountingHub[] = [];
@@ -447,6 +479,7 @@ describe("socket state transitions log at INFO", () => {
     expect(first.fields.channel).toBe("x:ingest");
     expect(String(first.fields.err)).toMatch(/1006/);
     expect(first.fields.delayMs).toBe(1000);
+    expect(first.fields.attempt).toBe(0);
     await loop.stop();
   });
 
@@ -539,6 +572,88 @@ describe("socket state transitions log at INFO", () => {
     // Let the loop idle: many macrotask turns while nothing changes.
     for (let i = 0; i < 200; i++) await yieldMacrotask();
     expect(lines).toEqual(linesAfterConnect);
+    await loop.stop();
+  });
+
+  it("an eviction with auth_expired logs at INFO and carries the channel", async () => {
+    const state = createBeaconState();
+    const { lines, log } = makeLog();
+    let hub!: FakeHubClient;
+    const loop = startSocketLoop({
+      build: () => (hub = new FakeHubClient()),
+      ingestChannel: "x:ingest",
+      key: "wbk_x",
+      state,
+      sleep: yieldMacrotask,
+      log,
+    });
+    await waitConnected(state);
+    hub.emit("ChannelEvent", {
+      channel: "x:ingest",
+      event: "channelEvicted",
+      data: { channel: "x:ingest", reason: "auth_expired" },
+    });
+    await drain();
+    const evict = lines.filter((l) => l.msg === "socket evicted");
+    expect(evict.length).toBeGreaterThanOrEqual(1);
+    expect(evict[0]!.level).toBe("info");
+    expect(evict[0]!.fields.channel).toBe("x:ingest");
+    expect(evict[0]!.fields.reason).toBe("auth_expired");
+    await loop.stop();
+  });
+
+  it("a rejoin logs at INFO with the channel", async () => {
+    const state = createBeaconState();
+    const { lines, log } = makeLog();
+    const loop = startSocketLoop({
+      build: () => new FakeHubClient(),
+      ingestChannel: "x:ingest",
+      key: "wbk_x",
+      state,
+      sleep: yieldMacrotask,
+      log,
+    });
+    await waitConnected(state);
+    await loop.rejoin();
+    const rejoinLines = lines.filter((l) => l.msg === "socket rejoined");
+    expect(rejoinLines.length).toBe(1);
+    expect(rejoinLines[0]!.level).toBe("info");
+    expect(rejoinLines[0]!.fields.channel).toBe("x:ingest");
+    await loop.stop();
+  });
+
+  it("a rejoin failure logs at WARN with the channel and err", async () => {
+    const state = createBeaconState();
+    const { lines, log } = makeLog();
+    class ThrowRejoin extends FakeHubClient {
+      public joinCount = 0;
+      override invoke<T = unknown>(method: string, ...args: unknown[]): Promise<T> {
+        if (method === "JoinPrivateChannel") {
+          this.joinCount += 1;
+          if (this.joinCount === 1) return Promise.resolve(undefined as unknown as T);
+          return Promise.reject(new Error("nope"));
+        }
+        return super.invoke<T>(method, ...args);
+      }
+    }
+    const neverSleep = () => new Promise<void>(() => {});
+    let hub!: ThrowRejoin;
+    const loop = startSocketLoop({
+      build: () => (hub = new ThrowRejoin()),
+      ingestChannel: "x:ingest",
+      key: "wbk_x",
+      state,
+      sleep: neverSleep,
+      log,
+    });
+    for (let i = 0; i < 10; i++) await yieldMacrotask();
+    expect(state.socketState).toBe("connected");
+    await loop.rejoin();
+    const fail = lines.filter((l) => l.msg === "socket rejoin failed");
+    expect(fail.length).toBe(1);
+    expect(fail[0]!.level).toBe("warn");
+    expect(fail[0]!.fields.channel).toBe("x:ingest");
+    expect(String(fail[0]!.fields.err)).toMatch(/nope/);
     await loop.stop();
   });
 

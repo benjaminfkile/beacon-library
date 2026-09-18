@@ -122,13 +122,13 @@ A beacon that needs something the facade does not offer uses the loops directly;
       "steps": [
         { "hub": "startResolves" },
         { "hub": "joinResolves" },
-        { "expect": "connected", "reconnectCount": 0 },
+        { "expect": "connected", "reconnectCount": 1 },
         { "hub": "close", "error": "WebSocket closed with status code: 1006" },
         { "expect": "reconnecting", "delayMs": 1000 },
         { "advanceMs": 1000 },
         { "hub": "startResolves" },
         { "hub": "joinResolves" },
-        { "expect": "connected", "reconnectCount": 1 }
+        { "expect": "connected", "reconnectCount": 2 }
       ]
     }
   ]

@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://beacon-library/conformance/scenarios.schema.json",
+  "title": "Beacon socket loop conformance scenarios",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "backoffMs", "joinDeniedFirstWaitMs", "scenarios"],
+  "properties": {
+    "schemaVersion": { "type": "integer", "const": 1 },
+    "backoffMs": {
+      "type": "array",
+      "items": { "type": "integer", "minimum": 0 },
+      "minItems": 1
+    },
+    "joinDeniedFirstWaitMs": { "type": "integer", "minimum": 0 },
+    "scenarios": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/scenario" }
+    }
+  },
+  "$defs": {
+    "scenario": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "steps"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/step" }
+        }
+      }
+    },
+    "step": {
+      "oneOf": [
+        { "$ref": "#/$defs/hubStep" },
+        { "$ref": "#/$defs/advanceStep" },
+        { "$ref": "#/$defs/rejoinStep" },
+        { "$ref": "#/$defs/stopStep" },
+        { "$ref": "#/$defs/expectStep" }
+      ]
+    },
+    "hubStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hub"],
+      "properties": {
+        "hub": {
+          "type": "string",
+          "enum": [
+            "startResolves",
+            "startRejects",
+            "startNeverSettles",
+            "joinResolves",
+            "joinDenied",
+            "joinRejects",
+            "joinNeverSettles",
+            "close",
+            "evict",
+            "buildThrows"
+          ]
+        },
+        "error": { "type": "string" },
+        "reason": { "type": "string" }
+      }
+    },
+    "advanceStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["advanceMs"],
+      "properties": {
+        "advanceMs": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "rejoinStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rejoin"],
+      "properties": { "rejoin": { "const": true } }
+    },
+    "stopStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stop"],
+      "properties": { "stop": { "const": true } }
+    },
+    "expectStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["expect"],
+      "properties": {
+        "expect": {
+          "type": "string",
+          "enum": ["connected", "connecting", "reconnecting", "disconnected"]
+        },
+        "reconnectCount": { "type": "integer", "minimum": 0 },
+        "rejoinCount": { "type": "integer", "minimum": 0 },
+        "delayMs": { "type": "integer", "minimum": 0 },
+        "hubsBuilt": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}
