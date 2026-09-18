@@ -1,0 +1,347 @@
+{
+  "schemaVersion": 1,
+  "backoffMs": [1000, 2000, 3000, 5000],
+  "joinDeniedFirstWaitMs": 10000,
+  "scenarios": [
+    {
+      "name": "transport close while connected",
+      "steps": [
+        { "hub": "startResolves" },
+        { "hub": "joinResolves" },
+        { "expect": "connected", "reconnectCount": 1, "hubsBuilt": 1 },
+        { "hub": "close", "error": "WebSocket closed with status code: 1006" },
+        { "expect": "reconnecting", "delayMs": 1000 },
+        { "advanceMs": 1000 },
+        { "hub": "startResolves" },
+        { "hub": "joinResolves" },
+        { "expect": "connected", "reconnectCount": 2, "hubsBuilt": 2 }
+      ]
+    },
+    {
+      "name": "clean close while connected",
+      "steps": [
+        { "hub": "startResolves" },
+        { "hub": "joinResolves" },
+        { "expect": "connected", "reconnectCount": 1 },
+        { "hub": "close" },
+        { "expect": "reconnecting", "delayMs": 1000 },
+        { "advanceMs": 1000 },
+        { "hub": "startResolves" },
+        { "hub": "joinResolves" },
+        { "expect": "connected", "reconnectCount": 2, "hubsBuilt": 2 }
+      ]
+    },
+    {
+      "name": "close during the handshake",
+      "steps": [
+        { "hub": "close", "error": "WebSocket closed with status code: 1006" },
+        { "expect": "reconnecting", "delayMs": 1000, "hubsBuilt": 1 },
+        { "advanceMs": 1000 },
+        { "hub": "startResolves" },
+        { "hub": "joinResolves" },
+        { "expect": "connected", "reconnectCount": 1, "hubsBuilt": 2 }
+      ]
+    },
+    {
+      "name": "close during the join",
+      "steps": [
+        { "hub": "startResolves" },
+        { "hub": "close", "error": "WebSocket closed with status code: 1006" },
+        { "expect": "reconnecting", "delayMs": 1000, "hubsBuilt": 1 },
+        { "advanceMs": 1000 },
+        { "hub": "startResolves" },
+        { "hub": "joinResolves" },
+        { "expect": "connected", "reconnectCount": 1, "hubsBuilt": 2 }
+      ]
+    },
+    {
+      "name": "handshake never settles then the connection closes",
+      "steps": [
+        { "hub": "startNeverSettles" },
+        { "hub": "close", "error": "1006 during hanging handshake" },
+        { "expect": "reconnecting", "delayMs": 1000, "hubsBuilt": 1 },
+        { "advanceMs": 1000 },
+        { "hub": "startResolves" },
+        { "hub": "joinResolves" },
+        { "expect": "connected", "reconnectCount": 1, "hubsBuilt": 2 }
+      ]
+    },
+    {
+      "name": "join never settles then the connection closes",
+      "steps": [
+        { "hub": "startResolves" },
+        { "hub": "joinNeverSettles" },
+        { "hub": "close", "error": "1006 during hanging join" },
+        { "expect": "reconnecting", "delayMs": 1000, "hubsBuilt": 1 },
+        { "advanceMs": 1000 },
+        { "hub": "startResolves" },
+        { "hub": "joinResolves" },
+        { "expect": "connected", "reconnectCount": 1, "hubsBuilt": 2 }
+      ]
+    },
+    {
+      "name": "start rejects",
+      "steps": [
+        { "hub": "startRejects" },
+        { "expect": "reconnecting", "delayMs": 1000, "hubsBuilt": 1 },
+        { "advanceMs": 1000 },
+        { "hub": "startResolves" },
+        { "hub": "joinResolves" },
+        { "expect": "connected", "reconnectCount": 1, "hubsBuilt": 2 }
+      ]
+    },
+    {
+      "name": "join rejects",
+      "steps": [
+        { "hub": "startResolves" },
+        { "hub": "joinRejects" },
+        { "expect": "reconnecting", "delayMs": 1000, "hubsBuilt": 1 },
+        { "advanceMs": 1000 },
+        { "hub": "startResolves" },
+        { "hub": "joinResolves" },
+        { "expect": "connected", "reconnectCount": 1, "hubsBuilt": 2 }
+      ]
+    },
+    {
+      "name": "join denied waits ten seconds first",
+      "steps": [
+        { "hub": "startResolves" },
+        { "hub": "joinDenied" },
+        { "expect": "reconnecting", "delayMs": 10000, "hubsBuilt": 1 },
+        { "advanceMs": 10000 },
+        { "hub": "startResolves" },
+        { "hub": "joinResolves" },
+        { "expect": "connected", "reconnectCount": 1, "hubsBuilt": 2 }
+      ]
+    },
+    {
+      "name": "evicted auth_expired rejoins on the same connection",
+      "steps": [
+        { "hub": "startResolves" },
+        { "hub": "joinResolves" },
+        { "expect": "connected", "reconnectCount": 1, "rejoinCount": 0, "hubsBuilt": 1 },
+        { "hub": "evict", "reason": "auth_expired" },
+        { "hub": "joinResolves" },
+        { "expect": "connected", "reconnectCount": 1, "rejoinCount": 1, "hubsBuilt": 1 }
+      ]
+    },
+    {
+      "name": "evicted for another reason reconnects",
+      "steps": [
+        { "hub": "startResolves" },
+        { "hub": "joinResolves" },
+        { "expect": "connected", "reconnectCount": 1, "hubsBuilt": 1 },
+        { "hub": "evict", "reason": "service_removed" },
+        { "advanceMs": 1000 },
+        { "expect": "reconnecting", "delayMs": 1000, "hubsBuilt": 1 },
+        { "advanceMs": 1000 },
+        { "hub": "startResolves" },
+        { "hub": "joinResolves" },
+        { "expect": "connected", "reconnectCount": 2, "hubsBuilt": 2 }
+      ]
+    },
+    {
+      "name": "hub build throws",
+      "steps": [
+        { "hub": "buildThrows" },
+        { "expect": "reconnecting", "delayMs": 1000, "hubsBuilt": 0 },
+        { "advanceMs": 1000 },
+        { "hub": "startResolves" },
+        { "hub": "joinResolves" },
+        { "expect": "connected", "reconnectCount": 1, "hubsBuilt": 1 }
+      ]
+    },
+    {
+      "name": "whole fleet gone then back",
+      "steps": [
+        { "hub": "startRejects" },
+        { "expect": "reconnecting", "delayMs": 1000, "hubsBuilt": 1 },
+        { "advanceMs": 1000 },
+        { "hub": "startRejects" },
+        { "expect": "reconnecting", "delayMs": 2000, "hubsBuilt": 2 },
+        { "advanceMs": 2000 },
+        { "hub": "startRejects" },
+        { "expect": "reconnecting", "delayMs": 3000, "hubsBuilt": 3 },
+        { "advanceMs": 3000 },
+        { "hub": "startRejects" },
+        { "expect": "reconnecting", "delayMs": 5000, "hubsBuilt": 4 },
+        { "advanceMs": 5000 },
+        { "hub": "startRejects" },
+        { "expect": "reconnecting", "delayMs": 5000, "hubsBuilt": 5 },
+        { "advanceMs": 5000 },
+        { "hub": "startRejects" },
+        { "expect": "reconnecting", "delayMs": 5000, "hubsBuilt": 6 },
+        { "advanceMs": 5000 },
+        { "hub": "startRejects" },
+        { "expect": "reconnecting", "delayMs": 5000, "hubsBuilt": 7 },
+        { "advanceMs": 5000 },
+        { "hub": "startRejects" },
+        { "expect": "reconnecting", "delayMs": 5000, "hubsBuilt": 8 },
+        { "advanceMs": 5000 },
+        { "hub": "startResolves" },
+        { "hub": "joinResolves" },
+        { "expect": "connected", "reconnectCount": 1, "hubsBuilt": 9 },
+        { "hub": "close", "error": "1006" },
+        { "expect": "reconnecting", "delayMs": 1000, "hubsBuilt": 9 }
+      ]
+    },
+    {
+      "name": "twenty five consecutive closes",
+      "steps": [
+        { "hub": "startResolves" },
+        { "hub": "joinResolves" },
+        { "expect": "connected", "reconnectCount": 1, "hubsBuilt": 1 },
+        { "hub": "close", "error": "1006" },
+        { "advanceMs": 1000 },
+        { "hub": "startResolves" },
+        { "hub": "joinResolves" },
+        { "expect": "connected", "reconnectCount": 2, "hubsBuilt": 2 },
+        { "hub": "close", "error": "1006" },
+        { "advanceMs": 1000 },
+        { "hub": "startResolves" },
+        { "hub": "joinResolves" },
+        { "expect": "connected", "reconnectCount": 3, "hubsBuilt": 3 },
+        { "hub": "close", "error": "1006" },
+        { "advanceMs": 1000 },
+        { "hub": "startResolves" },
+        { "hub": "joinResolves" },
+        { "expect": "connected", "reconnectCount": 4, "hubsBuilt": 4 },
+        { "hub": "close", "error": "1006" },
+        { "advanceMs": 1000 },
+        { "hub": "startResolves" },
+        { "hub": "joinResolves" },
+        { "expect": "connected", "reconnectCount": 5, "hubsBuilt": 5 },
+        { "hub": "close", "error": "1006" },
+        { "advanceMs": 1000 },
+        { "hub": "startResolves" },
+        { "hub": "joinResolves" },
+        { "expect": "connected", "reconnectCount": 6, "hubsBuilt": 6 },
+        { "hub": "close", "error": "1006" },
+        { "advanceMs": 1000 },
+        { "hub": "startResolves" },
+        { "hub": "joinResolves" },
+        { "expect": "connected", "reconnectCount": 7, "hubsBuilt": 7 },
+        { "hub": "close", "error": "1006" },
+        { "advanceMs": 1000 },
+        { "hub": "startResolves" },
+        { "hub": "joinResolves" },
+        { "expect": "connected", "reconnectCount": 8, "hubsBuilt": 8 },
+        { "hub": "close", "error": "1006" },
+        { "advanceMs": 1000 },
+        { "hub": "startResolves" },
+        { "hub": "joinResolves" },
+        { "expect": "connected", "reconnectCount": 9, "hubsBuilt": 9 },
+        { "hub": "close", "error": "1006" },
+        { "advanceMs": 1000 },
+        { "hub": "startResolves" },
+        { "hub": "joinResolves" },
+        { "expect": "connected", "reconnectCount": 10, "hubsBuilt": 10 },
+        { "hub": "close", "error": "1006" },
+        { "advanceMs": 1000 },
+        { "hub": "startResolves" },
+        { "hub": "joinResolves" },
+        { "expect": "connected", "reconnectCount": 11, "hubsBuilt": 11 },
+        { "hub": "close", "error": "1006" },
+        { "advanceMs": 1000 },
+        { "hub": "startResolves" },
+        { "hub": "joinResolves" },
+        { "expect": "connected", "reconnectCount": 12, "hubsBuilt": 12 },
+        { "hub": "close", "error": "1006" },
+        { "advanceMs": 1000 },
+        { "hub": "startResolves" },
+        { "hub": "joinResolves" },
+        { "expect": "connected", "reconnectCount": 13, "hubsBuilt": 13 },
+        { "hub": "close", "error": "1006" },
+        { "advanceMs": 1000 },
+        { "hub": "startResolves" },
+        { "hub": "joinResolves" },
+        { "expect": "connected", "reconnectCount": 14, "hubsBuilt": 14 },
+        { "hub": "close", "error": "1006" },
+        { "advanceMs": 1000 },
+        { "hub": "startResolves" },
+        { "hub": "joinResolves" },
+        { "expect": "connected", "reconnectCount": 15, "hubsBuilt": 15 },
+        { "hub": "close", "error": "1006" },
+        { "advanceMs": 1000 },
+        { "hub": "startResolves" },
+        { "hub": "joinResolves" },
+        { "expect": "connected", "reconnectCount": 16, "hubsBuilt": 16 },
+        { "hub": "close", "error": "1006" },
+        { "advanceMs": 1000 },
+        { "hub": "startResolves" },
+        { "hub": "joinResolves" },
+        { "expect": "connected", "reconnectCount": 17, "hubsBuilt": 17 },
+        { "hub": "close", "error": "1006" },
+        { "advanceMs": 1000 },
+        { "hub": "startResolves" },
+        { "hub": "joinResolves" },
+        { "expect": "connected", "reconnectCount": 18, "hubsBuilt": 18 },
+        { "hub": "close", "error": "1006" },
+        { "advanceMs": 1000 },
+        { "hub": "startResolves" },
+        { "hub": "joinResolves" },
+        { "expect": "connected", "reconnectCount": 19, "hubsBuilt": 19 },
+        { "hub": "close", "error": "1006" },
+        { "advanceMs": 1000 },
+        { "hub": "startResolves" },
+        { "hub": "joinResolves" },
+        { "expect": "connected", "reconnectCount": 20, "hubsBuilt": 20 },
+        { "hub": "close", "error": "1006" },
+        { "advanceMs": 1000 },
+        { "hub": "startResolves" },
+        { "hub": "joinResolves" },
+        { "expect": "connected", "reconnectCount": 21, "hubsBuilt": 21 },
+        { "hub": "close", "error": "1006" },
+        { "advanceMs": 1000 },
+        { "hub": "startResolves" },
+        { "hub": "joinResolves" },
+        { "expect": "connected", "reconnectCount": 22, "hubsBuilt": 22 },
+        { "hub": "close", "error": "1006" },
+        { "advanceMs": 1000 },
+        { "hub": "startResolves" },
+        { "hub": "joinResolves" },
+        { "expect": "connected", "reconnectCount": 23, "hubsBuilt": 23 },
+        { "hub": "close", "error": "1006" },
+        { "advanceMs": 1000 },
+        { "hub": "startResolves" },
+        { "hub": "joinResolves" },
+        { "expect": "connected", "reconnectCount": 24, "hubsBuilt": 24 },
+        { "hub": "close", "error": "1006" },
+        { "advanceMs": 1000 },
+        { "hub": "startResolves" },
+        { "hub": "joinResolves" },
+        { "expect": "connected", "reconnectCount": 25, "hubsBuilt": 25 },
+        { "hub": "close", "error": "1006" },
+        { "advanceMs": 1000 },
+        { "hub": "startResolves" },
+        { "hub": "joinResolves" },
+        { "expect": "connected", "reconnectCount": 26, "hubsBuilt": 26 }
+      ]
+    },
+    {
+      "name": "stop during a backoff wait",
+      "steps": [
+        { "hub": "startResolves" },
+        { "hub": "joinResolves" },
+        { "expect": "connected", "reconnectCount": 1, "hubsBuilt": 1 },
+        { "hub": "close", "error": "1006" },
+        { "expect": "reconnecting", "delayMs": 1000, "hubsBuilt": 1 },
+        { "advanceMs": 500 },
+        { "stop": true },
+        { "advanceMs": 2000 },
+        { "expect": "disconnected", "hubsBuilt": 1 }
+      ]
+    },
+    {
+      "name": "rejoin requested by the send loop",
+      "steps": [
+        { "hub": "startResolves" },
+        { "hub": "joinResolves" },
+        { "expect": "connected", "reconnectCount": 1, "rejoinCount": 0, "hubsBuilt": 1 },
+        { "rejoin": true },
+        { "hub": "joinResolves" },
+        { "expect": "connected", "reconnectCount": 1, "rejoinCount": 1, "hubsBuilt": 1 }
+      ]
+    }
+  ]
+}

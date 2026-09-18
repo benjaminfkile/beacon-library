@@ -9,7 +9,7 @@ import addFormats from "ajv-formats";
 import { describe, expect, it } from "vitest";
 import { startHeartbeatLoop } from "../src/heartbeatLoop.js";
 import { createBeaconState } from "../src/state.js";
-import { createFakeRest } from "./fakes.js";
+import { createFakeRest } from "../src/testing.js";
 
 const schema = JSON.parse(
   readFileSync(join(process.cwd(), "contracts/schema/heartbeat.schema.json"), "utf8"),

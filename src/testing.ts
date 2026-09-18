@@ -1,8 +1,9 @@
-// Fakes used across the beacon tests: a hub that records invokes and lets a
-// test resolve or reject them; a REST fake that records POSTs and answers
-// scripted responses.
+// Fakes a consumer's own tests import: a scripted HubClient and a recording
+// REST client. Nothing in this file imports vitest or any dev dependency, so a
+// test runner in a consumer repository (or a plain Node script) can use them
+// without pulling in this library's test tooling.
 
-import type { HubClient } from "../src/hub.js";
+import type { HubClient } from "./hub.js";
 import type {
   HeartbeatBody,
   HeartbeatResponse,
@@ -10,7 +11,7 @@ import type {
   LocationResponse,
   Rest,
   RestError,
-} from "../src/rest.js";
+} from "./rest.js";
 
 export interface HubInvoke {
   method: string;
@@ -80,12 +81,14 @@ export interface HeartbeatCall {
   body: HeartbeatBody;
 }
 
-export function createFakeRest(now: () => number = Date.now): Rest & {
+export interface FakeRest extends Rest {
   locationCalls: LocationCall[];
   heartbeatCalls: HeartbeatCall[];
   nextLocation: (r: LocationResponse | RestError) => void;
   nextHeartbeat: (r: HeartbeatResponse | RestError) => void;
-} {
+}
+
+export function createFakeRest(now: () => number = Date.now): FakeRest {
   const locationCalls: LocationCall[] = [];
   const heartbeatCalls: HeartbeatCall[] = [];
   const locQueue: Array<LocationResponse | RestError> = [];
@@ -131,7 +134,6 @@ export function createFakeRest(now: () => number = Date.now): Rest & {
         };
       }
       if (r.ok) {
-        // Populate tSend/tReceive with the current clock so skew works.
         return { ...r, tSendMs: now() - 50, tReceiveMs: now() + 50 };
       }
       return r;

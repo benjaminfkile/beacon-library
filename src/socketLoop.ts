@@ -20,12 +20,10 @@
 
 import { backoffMs, JOIN_DENIED_FIRST_WAIT_MS } from "./backoff.js";
 import type { HubClient } from "./hub.js";
+import type { BeaconLogger } from "./logger.js";
 import type { BeaconState } from "./state.js";
 
-export interface SocketLogger {
-  info: (fields: Record<string, unknown>, msg: string) => void;
-  warn: (fields: Record<string, unknown>, msg: string) => void;
-}
+export type SocketLogger = Pick<BeaconLogger, "info" | "warn">;
 
 export interface SocketLoopOptions {
   build: () => HubClient;
