@@ -240,6 +240,30 @@ describe("createBeacon", () => {
     await b.stop();
   });
 
+  it("a start() issued while a stop is still in flight keeps its own hub", async () => {
+    const ctx = mkCtx();
+    const b = makeBeacon(ctx);
+    b.start();
+    await flush();
+    expect(b.running()).toBe(true);
+
+    const stopping = b.stop();
+    b.start();
+    await stopping;
+    await flush();
+    expect(b.running()).toBe(true);
+    expect(ctx.hubs).toHaveLength(2);
+
+    setLatestFix(b.state, FIX);
+    b.wake();
+    await vi.advanceTimersByTimeAsync(1);
+    await flush();
+    const sends = ctx.hubs[1]!.invokes.filter((i) => i.method === "SendToChannel");
+    expect(sends).toHaveLength(1);
+
+    await b.stop();
+  });
+
   it("wake() while the socket is down: a fix reaches the fake REST", async () => {
     const ctx = mkCtx();
     const b = makeBeacon(ctx);
@@ -473,6 +497,59 @@ describe("gateOnLeader", () => {
     await leader.pollOnce();
     await flush();
     expect(b.running()).toBe(false);
+
+    leader.stop();
+  });
+
+  it("a stop that rejects is logged and later leadership changes still apply", async () => {
+    const { lines, log } = makeLog();
+    let starts = 0;
+    let stops = 0;
+    let running = false;
+    const base = makeBeacon(mkCtx());
+    const beacon = {
+      ...base,
+      start: () => {
+        starts += 1;
+        running = true;
+      },
+      stop: async () => {
+        stops += 1;
+        running = false;
+        if (stops === 1) throw new Error("stop failed");
+      },
+      running: () => running,
+    };
+    const now = () => 1_000_000;
+    const leader = gateOnLeader({
+      leader: {
+        gatewayInternalUrl: "http://gateway",
+        realtimeToken: "grt_x",
+        autoStart: false,
+        now,
+        fetchImpl: scriptedFetch(now, [
+          { isLeader: true, evaluatedAtMsFromNow: -1000 },
+          { isLeader: false, evaluatedAtMsFromNow: -1000 },
+          { isLeader: true, evaluatedAtMsFromNow: -1000 },
+        ]),
+      },
+      beacon,
+      log,
+    });
+
+    await leader.pollOnce();
+    await flush();
+    await leader.pollOnce();
+    await flush();
+    await leader.pollOnce();
+    await flush();
+
+    expect(starts).toBe(2);
+    expect(stops).toBe(1);
+    expect(beacon.running()).toBe(true);
+    const failed = lines.filter((l) => l.level === "error" && l.msg === "leader transition failed");
+    expect(failed).toHaveLength(1);
+    expect(String(failed[0]!.fields.err)).toMatch(/stop failed/);
 
     leader.stop();
   });

@@ -96,8 +96,11 @@ export function createBeacon(opts: CreateBeaconOptions): Beacon {
     socket = null;
     sendLoop = null;
     heartbeat = null;
+    const h = hub;
     await s.stop();
-    hub = null;
+    // A start() issued while this stop was still in flight may already have
+    // built its own hub; only the hub of the loop that just stopped is cleared.
+    if (hub === h) hub = null;
   }
 
   return {
@@ -127,37 +130,56 @@ export function gateOnLeader(opts: GateOnLeaderOptions): Leader {
   const log = opts.log;
   const beacon = opts.beacon;
 
+  async function apply(isLeader: boolean): Promise<void> {
+    log.info({ isLeader }, "leader change");
+    if (isLeader) {
+      beacon.start();
+      if (opts.onStart) {
+        try {
+          await opts.onStart();
+        } catch (err) {
+          log.error(
+            { err: err instanceof Error ? err.message : String(err) },
+            "onStart failed",
+          );
+        }
+      }
+    } else {
+      if (opts.onStop) {
+        try {
+          await opts.onStop();
+        } catch (err) {
+          log.error(
+            { err: err instanceof Error ? err.message : String(err) },
+            "onStop failed",
+          );
+        }
+      }
+      await beacon.stop();
+    }
+  }
+
+  // A transition never rejects. A rejected link would make the chain skip
+  // every later leadership change and leave the beacon stopped for good.
+  async function transition(isLeader: boolean): Promise<void> {
+    try {
+      await apply(isLeader);
+    } catch (err) {
+      try {
+        log.error(
+          { isLeader, err: err instanceof Error ? err.message : String(err) },
+          "leader transition failed",
+        );
+      } catch {
+        // The caller's logger threw as well; the chain still continues.
+      }
+    }
+  }
+
   return startLeader({
     ...opts.leader,
     onChange: (isLeader) => {
-      chain = chain.then(async () => {
-        log.info({ isLeader }, "leader change");
-        if (isLeader) {
-          beacon.start();
-          if (opts.onStart) {
-            try {
-              await opts.onStart();
-            } catch (err) {
-              log.error(
-                { err: err instanceof Error ? err.message : String(err) },
-                "onStart failed",
-              );
-            }
-          }
-        } else {
-          if (opts.onStop) {
-            try {
-              await opts.onStop();
-            } catch (err) {
-              log.error(
-                { err: err instanceof Error ? err.message : String(err) },
-                "onStop failed",
-              );
-            }
-          }
-          await beacon.stop();
-        }
-      });
+      chain = chain.then(() => transition(isLeader));
     },
   });
 }
