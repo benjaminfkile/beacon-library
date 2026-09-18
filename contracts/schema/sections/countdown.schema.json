@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wmsfo.dev/schema/sections/countdown.schema.json",
+  "title": "countdown section data",
+  "type": "object",
+  "properties": {
+    "heading": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/InlineNullable" }
+  },
+  "required": ["heading"],
+  "additionalProperties": false
+}

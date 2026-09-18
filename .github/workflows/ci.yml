@@ -1,0 +1,24 @@
+name: ci
+
+on:
+  push:
+    branches: [main, dev, grunt, "grunt-**"]
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+      - run: npm ci
+      - name: contracts check
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run contracts:check
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build

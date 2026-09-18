@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wmsfo.dev/schema/sections/leaderboard.schema.json",
+  "title": "leaderboard section data",
+  "type": "object",
+  "properties": {
+    "heading": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/InlineNullable" },
+    "variant": { "enum": ["panel", "full"] },
+    "emptyText": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/Inline" }
+  },
+  "required": ["heading", "variant", "emptyText"],
+  "additionalProperties": false
+}

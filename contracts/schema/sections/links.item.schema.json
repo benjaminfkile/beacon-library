@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wmsfo.dev/schema/sections/links.item.schema.json",
+  "title": "links section item data",
+  "type": "object",
+  "properties": {
+    "link": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/Link" },
+    "description": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/InlineNullable" }
+  },
+  "required": ["link", "description"],
+  "additionalProperties": false
+}

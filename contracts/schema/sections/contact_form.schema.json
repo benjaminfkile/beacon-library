@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wmsfo.dev/schema/sections/contact_form.schema.json",
+  "title": "contact_form section data",
+  "type": "object",
+  "properties": {
+    "heading": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/InlineNullable" },
+    "copy": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/InlineNullable" },
+    "successText": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/Inline" }
+  },
+  "required": ["heading", "copy", "successText"],
+  "additionalProperties": false
+}

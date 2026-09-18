@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M12 3 L13 8 L18 9 L13 10 L12 15 L11 10 L6 9 L11 8 Z" fill="var(--icon-gold, #f0b32e)" stroke="var(--icon-gold, #f0b32e)" />
+  <path d="M18 13 L18.7 16.3 L22 17 L18.7 17.7 L18 21 L17.3 17.7 L14 17 L17.3 16.3 Z" fill="var(--icon-gold, #f0b32e)" stroke="var(--icon-gold, #f0b32e)" />
+  <path d="M5 15 L5.5 17.5 L8 18 L5.5 18.5 L5 21 L4.5 18.5 L2 18 L4.5 17.5 Z" fill="var(--icon-gold, #f0b32e)" stroke="var(--icon-gold, #f0b32e)" />
+</svg>

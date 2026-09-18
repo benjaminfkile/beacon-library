@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wmsfo.dev/schema/sections/route_preview.schema.json",
+  "title": "route_preview section data",
+  "type": "object",
+  "properties": {
+    "heading": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/InlineNullable" },
+    "style": { "enum": ["image", "viewer"] },
+    "disclaimer": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/InlineNullable" },
+    "emptyText": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/Inline" }
+  },
+  "required": ["heading", "style", "disclaimer", "emptyText"],
+  "additionalProperties": false
+}

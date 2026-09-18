@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wmsfo.dev/schema/sections/media.schema.json",
+  "title": "media section data",
+  "type": "object",
+  "properties": {
+    "layout": { "enum": ["single", "grid", "carousel"] },
+    "columns": { "enum": [2, 3, 4] }
+  },
+  "required": ["layout", "columns"],
+  "additionalProperties": false
+}

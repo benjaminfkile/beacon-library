@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wmsfo.dev/schema/sections/media.item.schema.json",
+  "title": "media section item data",
+  "type": "object",
+  "properties": {
+    "media": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/MediaRef" },
+    "caption": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/InlineNullable" },
+    "link": {
+      "oneOf": [
+        { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/Link" },
+        { "type": "null" }
+      ]
+    }
+  },
+  "required": ["media", "caption", "link"],
+  "additionalProperties": false
+}

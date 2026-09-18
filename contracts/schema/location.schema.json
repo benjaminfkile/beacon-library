@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "lat": {
+      "type": "number"
+    },
+    "lng": {
+      "type": "number"
+    },
+    "recordedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "speedMps": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "altitudeM": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "headingDeg": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "accuracyM": {
+      "type": [
+        "number",
+        "null"
+      ]
+    }
+  },
+  "additionalProperties": false
+}

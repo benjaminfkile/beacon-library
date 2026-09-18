@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wmsfo.dev/schema/sections/icon_row.schema.json",
+  "title": "icon_row section data",
+  "type": "object",
+  "properties": {
+    "size": { "enum": ["sm", "md", "lg"] },
+    "spacing": { "enum": ["tight", "normal", "loose"] }
+  },
+  "required": ["size", "spacing"],
+  "additionalProperties": false
+}

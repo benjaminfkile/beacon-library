@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wmsfo.dev/schema/site-settings.schema.json",
+  "title": "SiteSettings",
+  "description": "Site settings block that publishes with the pages (contracts 1.3a).",
+  "type": "object",
+  "properties": {
+    "siteName": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/Inline" },
+    "tagline": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/InlineNullable" },
+    "homeNavLabel": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/Inline" },
+    "logo": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/IconNullable" },
+    "favicon": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/IconNullable" },
+    "theme": {
+      "type": "object",
+      "properties": {
+        "snowDefault": { "type": "boolean" },
+        "lightsDefault": { "type": "boolean" },
+        "ornaments": { "type": "boolean" }
+      },
+      "required": ["snowDefault", "lightsDefault"],
+      "additionalProperties": false
+    },
+    "navExtraLinks": {
+      "type": "array",
+      "items": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/Link" },
+      "minItems": 0,
+      "maxItems": 5
+    },
+    "footerLinks": {
+      "type": "array",
+      "items": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/Link" },
+      "minItems": 0,
+      "maxItems": 10
+    },
+    "footerText": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/InlineNullable" },
+    "contactEmail": {
+      "oneOf": [
+        { "type": "string", "minLength": 3, "maxLength": 254, "format": "email" },
+        { "type": "null" }
+      ]
+    },
+    "donateUrl": {
+      "oneOf": [
+        { "type": "string", "minLength": 1, "maxLength": 2048, "pattern": "^https://\\S+$" },
+        { "type": "null" }
+      ]
+    },
+    "analyticsEnabled": { "type": "boolean" }
+  },
+  "required": [
+    "siteName", "tagline", "homeNavLabel", "logo", "favicon", "theme",
+    "navExtraLinks", "footerLinks", "footerText", "contactEmail", "donateUrl", "analyticsEnabled"
+  ],
+  "additionalProperties": false
+}

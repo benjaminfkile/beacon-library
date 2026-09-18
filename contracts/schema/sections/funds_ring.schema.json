@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wmsfo.dev/schema/sections/funds_ring.schema.json",
+  "title": "funds_ring section data",
+  "type": "object",
+  "properties": {
+    "heading": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/InlineNullable" },
+    "caption": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/InlineNullable" },
+    "size": { "enum": ["small", "large"] },
+    "showYear": { "type": "boolean" }
+  },
+  "required": ["heading", "caption", "size", "showYear"],
+  "additionalProperties": false
+}

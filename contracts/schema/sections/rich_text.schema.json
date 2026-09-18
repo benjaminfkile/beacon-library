@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wmsfo.dev/schema/sections/rich_text.schema.json",
+  "title": "rich_text section data",
+  "type": "object",
+  "properties": {
+    "blocks": {
+      "type": "array",
+      "items": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/Block" },
+      "minItems": 1,
+      "maxItems": 200
+    }
+  },
+  "required": ["blocks"],
+  "additionalProperties": false
+}

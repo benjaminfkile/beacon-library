@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wmsfo.dev/schema/sections/cookie_control.schema.json",
+  "title": "cookie_control section data",
+  "type": "object",
+  "properties": {
+    "heading": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/InlineNullable" },
+    "copy": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/InlineNullable" },
+    "signedOutCopy": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/Inline" },
+    "closedCopy": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/Inline" }
+  },
+  "required": ["heading", "copy", "signedOutCopy", "closedCopy"],
+  "additionalProperties": false
+}

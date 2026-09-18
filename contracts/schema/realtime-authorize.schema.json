@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "channel": {
+      "type": "string"
+    },
+    "credential": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "connectionId": {
+      "type": "string"
+    }
+  }
+}

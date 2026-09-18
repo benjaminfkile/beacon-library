@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wmsfo.dev/schema/sections/latest_message.schema.json",
+  "title": "latest_message section data",
+  "type": "object",
+  "properties": {
+    "heading": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/InlineNullable" },
+    "style": { "enum": ["card", "ticker"] }
+  },
+  "required": ["heading", "style"],
+  "additionalProperties": false
+}

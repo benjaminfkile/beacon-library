@@ -1,0 +1,142 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "integer"
+    },
+    "tag": {
+      "type": "string"
+    },
+    "batchNo": {
+      "type": "integer"
+    },
+    "printedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "active": {
+      "type": "boolean"
+    },
+    "note": {
+      "type": "string"
+    },
+    "opensPageId": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "forwardUrl": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "opens": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string"
+        },
+        "pageId": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "slug": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "url": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "opensSource": {
+      "type": "string"
+    },
+    "attachment": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer"
+        },
+        "placeId": {
+          "type": "integer"
+        },
+        "placePath": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "since": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": false
+    },
+    "scans": {
+      "type": "object",
+      "properties": {
+        "people": {
+          "type": "integer"
+        },
+        "flagged": {
+          "type": "integer"
+        },
+        "lastScanAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": false
+    },
+    "createdBy": {
+      "type": "string"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "audit": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "action": {
+          "type": "string"
+        },
+        "by": {
+          "type": "string"
+        },
+        "at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

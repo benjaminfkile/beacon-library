@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wmsfo.dev/schema/sections/event_times.schema.json",
+  "title": "event_times section data",
+  "type": "object",
+  "properties": {
+    "fields": {
+      "type": "array",
+      "items": { "enum": ["scheduledAt", "wentLiveAt", "endedAt", "airborneFor"] },
+      "minItems": 1,
+      "maxItems": 4,
+      "uniqueItems": true
+    },
+    "labels": {
+      "type": "object",
+      "properties": {
+        "scheduledAt": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/Inline" },
+        "wentLiveAt": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/Inline" },
+        "endedAt": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/Inline" },
+        "airborneFor": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/Inline" }
+      },
+      "required": ["scheduledAt", "wentLiveAt", "endedAt", "airborneFor"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["fields", "labels"],
+  "additionalProperties": false
+}

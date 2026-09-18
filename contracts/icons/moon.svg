@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M20 15 Q13 17 9 12 Q7 8 10 3 Q4 5 4 12 Q4 20 12 20 Q17 20 20 15 Z" fill="var(--icon-gold, #f0b32e)" stroke="var(--icon-gold, #f0b32e)" />
+  <circle cx="18" cy="5" r="0.8" fill="var(--icon-gold, #f0b32e)" stroke="none" />
+  <circle cx="21" cy="9" r="0.6" fill="var(--icon-gold, #f0b32e)" stroke="none" />
+</svg>

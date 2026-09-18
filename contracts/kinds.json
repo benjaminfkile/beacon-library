@@ -1,0 +1,292 @@
+{
+  "kinds": [
+    {
+      "kind": "rich_text",
+      "title": "Rich text",
+      "description": "Prose in blocks: headings, paragraphs, lists, quotes, media, links, icons, dividers.",
+      "live": false,
+      "hasItems": false,
+      "allowedRoles": null,
+      "defaults": {
+        "blocks": [
+          { "kind": "paragraph", "text": "Write something." }
+        ]
+      },
+      "itemDefaults": null
+    },
+    {
+      "kind": "hero",
+      "title": "Hero",
+      "description": "Large title, tagline, icon, and up to two call-to-action links.",
+      "live": false,
+      "hasItems": false,
+      "allowedRoles": null,
+      "defaults": {
+        "title": "Heading",
+        "tagline": null,
+        "icon": null,
+        "links": [],
+        "height": "tall"
+      },
+      "itemDefaults": null
+    },
+    {
+      "kind": "media",
+      "title": "Media",
+      "description": "One image or a grid or carousel of images.",
+      "live": false,
+      "hasItems": true,
+      "allowedRoles": null,
+      "defaults": {
+        "layout": "grid",
+        "columns": 3
+      },
+      "itemDefaults": {
+        "media": { "mediaId": "00000000-0000-0000-0000-000000000000", "alt": null },
+        "caption": null,
+        "link": null
+      }
+    },
+    {
+      "kind": "links",
+      "title": "Links",
+      "description": "A list of links, styled as buttons, cards, or a list.",
+      "live": false,
+      "hasItems": true,
+      "allowedRoles": null,
+      "defaults": {
+        "heading": null,
+        "style": "buttons"
+      },
+      "itemDefaults": {
+        "link": {
+          "label": "Link",
+          "href": "https://example.org/",
+          "icon": null,
+          "newTab": false
+        },
+        "description": null
+      }
+    },
+    {
+      "kind": "icon_row",
+      "title": "Icon row",
+      "description": "A row of icons with optional labels.",
+      "live": false,
+      "hasItems": true,
+      "allowedRoles": null,
+      "defaults": {
+        "size": "md",
+        "spacing": "normal"
+      },
+      "itemDefaults": {
+        "icon": { "source": "library", "id": "star" },
+        "label": null
+      }
+    },
+    {
+      "kind": "divider",
+      "title": "Divider",
+      "description": "A visual break between sections.",
+      "live": false,
+      "hasItems": false,
+      "allowedRoles": null,
+      "defaults": {
+        "style": "line"
+      },
+      "itemDefaults": null
+    },
+    {
+      "kind": "funds_ring",
+      "title": "Funds ring",
+      "description": "The cheer meter for the current event.",
+      "live": true,
+      "hasItems": false,
+      "allowedRoles": null,
+      "defaults": {
+        "heading": "Cheer meter",
+        "caption": null,
+        "size": "large",
+        "showYear": true
+      },
+      "itemDefaults": null
+    },
+    {
+      "kind": "countdown",
+      "title": "Countdown",
+      "description": "A countdown to the scheduled liftoff time. Renders only while the event is scheduled.",
+      "live": true,
+      "hasItems": false,
+      "allowedRoles": null,
+      "defaults": {
+        "heading": "Countdown to liftoff"
+      },
+      "itemDefaults": null
+    },
+    {
+      "kind": "event_times",
+      "title": "Event times",
+      "description": "The scheduled, liftoff, ended, and airborne-for times.",
+      "live": true,
+      "hasItems": false,
+      "allowedRoles": null,
+      "defaults": {
+        "fields": ["scheduledAt", "wentLiveAt", "endedAt", "airborneFor"],
+        "labels": {
+          "scheduledAt": "Scheduled",
+          "wentLiveAt": "Liftoff",
+          "endedAt": "Wheels down",
+          "airborneFor": "Airborne for"
+        }
+      },
+      "itemDefaults": null
+    },
+    {
+      "kind": "latest_message",
+      "title": "Latest message",
+      "description": "The most recent event message.",
+      "live": true,
+      "hasItems": false,
+      "allowedRoles": null,
+      "defaults": {
+        "heading": "Latest update",
+        "style": "card"
+      },
+      "itemDefaults": null
+    },
+    {
+      "kind": "map",
+      "title": "Map",
+      "description": "The full-viewport live map. Allowed only on the live page.",
+      "live": true,
+      "hasItems": false,
+      "allowedRoles": ["live"],
+      "defaults": {
+        "themes": ["standard", "expedition", "blizzard", "charcoal", "night", "nebula"],
+        "defaultTheme": "night",
+        "defaultCenter": { "lat": 46.87, "lng": -114.0 },
+        "defaultZoom": 11,
+        "controls": {
+          "themePicker": true,
+          "terrain": true,
+          "snow": true,
+          "flightHistory": true,
+          "timeLabels": true,
+          "location": true,
+          "dataRow": true
+        },
+        "flightHistoryDefault": false,
+        "overlays": {
+          "liveIndicator": true,
+          "liftoffTimer": true,
+          "latestMessage": true,
+          "leaderboardPanel": true,
+          "sponsorCarousel": true,
+          "cookieControl": true,
+          "distanceChip": true
+        }
+      },
+      "itemDefaults": null
+    },
+    {
+      "kind": "leaderboard",
+      "title": "Leaderboard",
+      "description": "The cookie leaderboard for the current event.",
+      "live": true,
+      "hasItems": false,
+      "allowedRoles": null,
+      "defaults": {
+        "heading": "Cookie leaderboard",
+        "variant": "panel",
+        "emptyText": "Be the first to leave a cookie."
+      },
+      "itemDefaults": null
+    },
+    {
+      "kind": "sponsor_carousel",
+      "title": "Sponsor carousel",
+      "description": "A rotating carousel of sponsor logos.",
+      "live": true,
+      "hasItems": false,
+      "allowedRoles": null,
+      "defaults": {
+        "heading": "Thanks to our sponsors",
+        "logoWidth": 480
+      },
+      "itemDefaults": null
+    },
+    {
+      "kind": "sponsor_grid",
+      "title": "Sponsor grid",
+      "description": "A grid of sponsor logos.",
+      "live": true,
+      "hasItems": false,
+      "allowedRoles": null,
+      "defaults": {
+        "heading": "Thanks to our sponsors",
+        "columns": 3,
+        "showYears": true,
+        "emptyText": "Sponsors welcome."
+      },
+      "itemDefaults": null
+    },
+    {
+      "kind": "route_preview",
+      "title": "Route preview",
+      "description": "This year's route poster as a linked picture or a pan-and-zoom viewer.",
+      "live": true,
+      "hasItems": false,
+      "allowedRoles": null,
+      "defaults": {
+        "heading": "This year's route",
+        "style": "image",
+        "disclaimer": null,
+        "emptyText": "The route will appear here once it is set."
+      },
+      "itemDefaults": null
+    },
+    {
+      "kind": "cookie_control",
+      "title": "Cookie control",
+      "description": "The leave-a-cookie form. Signed in while the event is live.",
+      "live": true,
+      "hasItems": false,
+      "allowedRoles": null,
+      "defaults": {
+        "heading": "Leave a cookie",
+        "copy": null,
+        "signedOutCopy": "Sign in to leave a cookie.",
+        "closedCopy": "The event is not live right now."
+      },
+      "itemDefaults": null
+    },
+    {
+      "kind": "alerts_signup",
+      "title": "Alerts signup",
+      "description": "The email alerts subscribe form.",
+      "live": true,
+      "hasItems": false,
+      "allowedRoles": null,
+      "defaults": {
+        "heading": "Get alerts",
+        "copy": null,
+        "signedOutCopy": "Sign in to sign up for alerts."
+      },
+      "itemDefaults": null
+    },
+    {
+      "kind": "contact_form",
+      "title": "Contact form",
+      "description": "A message form that posts to /contact.",
+      "live": true,
+      "hasItems": false,
+      "allowedRoles": null,
+      "defaults": {
+        "heading": "Send a note",
+        "copy": null,
+        "successText": "Thanks. We will get back to you."
+      },
+      "itemDefaults": null
+    }
+  ]
+}

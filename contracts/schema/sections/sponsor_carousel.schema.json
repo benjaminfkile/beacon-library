@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wmsfo.dev/schema/sections/sponsor_carousel.schema.json",
+  "title": "sponsor_carousel section data",
+  "type": "object",
+  "properties": {
+    "heading": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/InlineNullable" },
+    "logoWidth": { "enum": [480, 960] }
+  },
+  "required": ["heading", "logoWidth"],
+  "additionalProperties": false
+}

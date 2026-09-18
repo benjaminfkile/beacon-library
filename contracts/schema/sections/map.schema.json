@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wmsfo.dev/schema/sections/map.schema.json",
+  "title": "map section data",
+  "description": "Full-viewport live map (contracts 1.3a). Allowed only on the page with role `live` (reference-checker rule).",
+  "type": "object",
+  "properties": {
+    "themes": {
+      "type": "array",
+      "items": { "enum": ["standard", "expedition", "blizzard", "charcoal", "night", "nebula"] },
+      "minItems": 1,
+      "maxItems": 10,
+      "uniqueItems": true
+    },
+    "defaultTheme": { "enum": ["standard", "expedition", "blizzard", "charcoal", "night", "nebula"] },
+    "defaultCenter": {
+      "type": "object",
+      "properties": {
+        "lat": { "type": "number", "minimum": -90, "maximum": 90 },
+        "lng": { "type": "number", "minimum": -180, "maximum": 180 }
+      },
+      "required": ["lat", "lng"],
+      "additionalProperties": false
+    },
+    "defaultZoom": { "type": "integer", "minimum": 3, "maximum": 18 },
+    "controls": {
+      "type": "object",
+      "properties": {
+        "themePicker": { "type": "boolean" },
+        "terrain": { "type": "boolean" },
+        "snow": { "type": "boolean" },
+        "flightHistory": { "type": "boolean" },
+        "timeLabels": { "type": "boolean" },
+        "location": { "type": "boolean" },
+        "dataRow": { "type": "boolean" }
+      },
+      "required": ["themePicker", "terrain", "snow", "flightHistory", "timeLabels", "location", "dataRow"],
+      "additionalProperties": false
+    },
+    "flightHistoryDefault": { "type": "boolean" },
+    "overlays": {
+      "type": "object",
+      "properties": {
+        "liveIndicator": { "type": "boolean" },
+        "liftoffTimer": { "type": "boolean" },
+        "latestMessage": { "type": "boolean" },
+        "leaderboardPanel": { "type": "boolean" },
+        "sponsorCarousel": { "type": "boolean" },
+        "cookieControl": { "type": "boolean" },
+        "distanceChip": { "type": "boolean" }
+      },
+      "required": ["liveIndicator", "liftoffTimer", "latestMessage", "leaderboardPanel", "sponsorCarousel", "cookieControl", "distanceChip"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["themes", "defaultTheme", "defaultCenter", "defaultZoom", "controls", "flightHistoryDefault", "overlays"],
+  "additionalProperties": false
+}

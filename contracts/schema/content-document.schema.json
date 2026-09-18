@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wmsfo.dev/schema/content-document.schema.json",
+  "title": "ContentDocument",
+  "description": "The published content document (contracts 1.3a). Section `data` and `items[].data` are validated by the per-kind schemas under contracts/schema/sections/.",
+  "type": "object",
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "settings": { "$ref": "https://wmsfo.dev/schema/site-settings.schema.json" },
+    "pages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "minimum": 1 },
+          "slug": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60,
+            "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+          },
+          "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+          "navLabel": {
+            "oneOf": [
+              { "type": "string", "minLength": 1, "maxLength": 40 },
+              { "type": "null" }
+            ]
+          },
+          "navPosition": { "type": "integer" },
+          "role": { "enum": ["none", "no_event", "planned", "scheduled", "live", "ended", "cancelled"] },
+          "sections": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "integer", "minimum": 1 },
+                "kind": { "type": "string", "minLength": 1, "maxLength": 60 },
+                "presentation": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/Presentation" },
+                "data": true,
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": { "type": "integer", "minimum": 1 },
+                      "data": true
+                    },
+                    "required": ["id", "data"],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": ["id", "kind", "presentation", "data", "items"],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": ["id", "slug", "title", "navLabel", "navPosition", "role", "sections"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["schemaVersion", "settings", "pages"],
+  "additionalProperties": false
+}

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M3 8 L3 16 Q3 18.5 12 18.5 Q21 18.5 21 16 L21 8 Z" fill="var(--icon-red, #e0524b)" />
+  <ellipse cx="12" cy="8" rx="9" ry="2.5" fill="var(--icon-snow, #ffffff)" fill-opacity="0.92" />
+  <path d="M5 10 L8 16.5" stroke="var(--icon-gold, #f0b32e)" />
+  <path d="M8 10 L5 16.5" stroke="var(--icon-gold, #f0b32e)" />
+  <path d="M11 10.5 L14 17" stroke="var(--icon-gold, #f0b32e)" />
+  <path d="M14 10.5 L11 17" stroke="var(--icon-gold, #f0b32e)" />
+  <path d="M17 10 L20 16.5" stroke="var(--icon-gold, #f0b32e)" />
+  <path d="M20 10 L17 16.5" stroke="var(--icon-gold, #f0b32e)" />
+  <path d="M6 20.5 L10 22.5" />
+  <path d="M18 20.5 L14 22.5" />
+</svg>

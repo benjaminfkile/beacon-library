@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wmsfo.dev/schema/sections/hero.schema.json",
+  "title": "hero section data",
+  "type": "object",
+  "properties": {
+    "title": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/Inline" },
+    "tagline": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/InlineNullable" },
+    "icon": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/IconNullable" },
+    "links": {
+      "type": "array",
+      "items": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/Link" },
+      "minItems": 0,
+      "maxItems": 2
+    },
+    "height": { "enum": ["short", "tall"] }
+  },
+  "required": ["title", "tagline", "icon", "links", "height"],
+  "additionalProperties": false
+}

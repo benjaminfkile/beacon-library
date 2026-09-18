@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M12 22 Q4 12 4 9 Q4 3 12 3 Q20 3 20 9 Q20 12 12 22 Z" fill="var(--icon-red, #e0524b)" />
+  <circle cx="12" cy="9" r="2.6" fill="var(--icon-snow, #ffffff)" fill-opacity="0.95" />
+</svg>

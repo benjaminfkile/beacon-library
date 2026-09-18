@@ -1,0 +1,236 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wmsfo.dev/schema/primitives.schema.json",
+  "title": "WMSFO content primitives",
+  "description": "Shared value types referenced by every section, item, and site settings schema (contracts 1.3a).",
+  "$defs": {
+    "Inline": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 5000
+    },
+    "InlineNullable": {
+      "oneOf": [
+        { "$ref": "#/$defs/Inline" },
+        { "type": "null" }
+      ]
+    },
+    "Href": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048,
+      "pattern": "^(https?://\\S+|mailto:\\S+@\\S+|/[a-z0-9]+(-[a-z0-9]+)*(#[a-z0-9]+(-[a-z0-9]+)*)?)$"
+    },
+    "LibraryIconId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 60,
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+    },
+    "MediaId": {
+      "type": "string",
+      "minLength": 36,
+      "maxLength": 36,
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    },
+    "Anchor": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 60,
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+    },
+    "Icon": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "source": { "const": "library" },
+            "id": { "$ref": "#/$defs/LibraryIconId" }
+          },
+          "required": ["source", "id"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "source": { "const": "media" },
+            "id": { "$ref": "#/$defs/MediaId" }
+          },
+          "required": ["source", "id"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "IconNullable": {
+      "oneOf": [
+        { "$ref": "#/$defs/Icon" },
+        { "type": "null" }
+      ]
+    },
+    "MediaRef": {
+      "type": "object",
+      "properties": {
+        "mediaId": { "$ref": "#/$defs/MediaId" },
+        "alt": { "type": ["string", "null"], "maxLength": 500 }
+      },
+      "required": ["mediaId", "alt"],
+      "additionalProperties": false
+    },
+    "Link": {
+      "type": "object",
+      "properties": {
+        "label": { "$ref": "#/$defs/Inline" },
+        "href": { "$ref": "#/$defs/Href" },
+        "icon": { "$ref": "#/$defs/IconNullable" },
+        "newTab": { "type": "boolean" }
+      },
+      "required": ["label", "href", "icon", "newTab"],
+      "additionalProperties": false
+    },
+    "Presentation": {
+      "type": "object",
+      "properties": {
+        "width": { "enum": ["full", "wide", "narrow"] },
+        "align": { "enum": ["start", "center"] },
+        "background": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "kind": { "const": "none" }
+              },
+              "required": ["kind"],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": { "const": "token" },
+                "token": { "enum": ["surface", "muted", "accent", "night"] }
+              },
+              "required": ["kind", "token"],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": { "const": "media" },
+                "media": { "$ref": "#/$defs/MediaRef" },
+                "overlay": { "type": "number", "minimum": 0, "maximum": 1 }
+              },
+              "required": ["kind", "media", "overlay"],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "spacing": { "enum": ["tight", "normal", "loose"] },
+        "iconBefore": { "$ref": "#/$defs/IconNullable" },
+        "iconAfter": { "$ref": "#/$defs/IconNullable" },
+        "anchor": {
+          "oneOf": [
+            { "$ref": "#/$defs/Anchor" },
+            { "type": "null" }
+          ]
+        }
+      },
+      "required": ["width", "align", "background", "spacing", "iconBefore", "iconAfter", "anchor"],
+      "additionalProperties": false
+    },
+    "Block": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": { "const": "heading" },
+            "level": { "enum": [1, 2, 3] },
+            "text": { "$ref": "#/$defs/Inline" },
+            "icon": { "$ref": "#/$defs/IconNullable" }
+          },
+          "required": ["kind", "level", "text", "icon"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": { "const": "paragraph" },
+            "text": { "$ref": "#/$defs/Inline" }
+          },
+          "required": ["kind", "text"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": { "const": "list" },
+            "style": { "enum": ["bullet", "number", "icon"] },
+            "icon": { "$ref": "#/$defs/IconNullable" },
+            "items": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/Inline" },
+              "minItems": 1,
+              "maxItems": 100
+            }
+          },
+          "required": ["kind", "style", "icon", "items"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": { "const": "quote" },
+            "text": { "$ref": "#/$defs/Inline" },
+            "attribution": { "$ref": "#/$defs/InlineNullable" }
+          },
+          "required": ["kind", "text", "attribution"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": { "const": "media" },
+            "media": { "$ref": "#/$defs/MediaRef" },
+            "caption": { "$ref": "#/$defs/InlineNullable" },
+            "size": { "enum": ["small", "medium", "full"] }
+          },
+          "required": ["kind", "media", "caption", "size"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": { "const": "links" },
+            "links": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/Link" },
+              "minItems": 1,
+              "maxItems": 20
+            },
+            "style": { "enum": ["buttons", "list"] }
+          },
+          "required": ["kind", "links", "style"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": { "const": "icon" },
+            "icon": { "$ref": "#/$defs/Icon" },
+            "size": { "enum": ["sm", "md", "lg", "xl"] },
+            "align": { "enum": ["start", "center"] }
+          },
+          "required": ["kind", "icon", "size", "align"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": { "const": "divider" },
+            "style": { "enum": ["line", "snowflakes", "lights"] }
+          },
+          "required": ["kind", "style"],
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}

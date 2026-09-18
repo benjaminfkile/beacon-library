@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wmsfo.dev/schema/sections/icon_row.item.schema.json",
+  "title": "icon_row section item data",
+  "type": "object",
+  "properties": {
+    "icon": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/Icon" },
+    "label": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/InlineNullable" }
+  },
+  "required": ["icon", "label"],
+  "additionalProperties": false
+}

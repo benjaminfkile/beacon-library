@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wmsfo.dev/schema/sections/divider.schema.json",
+  "title": "divider section data",
+  "type": "object",
+  "properties": {
+    "style": { "enum": ["line", "snowflakes", "lights"] }
+  },
+  "required": ["style"],
+  "additionalProperties": false
+}

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="4" y="10" width="16" height="10" rx="0.8" fill="var(--icon-red, #e0524b)" />
+  <rect x="3" y="7" width="18" height="3.5" rx="0.8" fill="var(--icon-red, #e0524b)" />
+  <path d="M12 7 L12 20" stroke="var(--icon-gold, #f0b32e)" stroke-width="2" />
+  <path d="M12 7 Q9 3 7 5 Q6 7 12 7 Z" fill="var(--icon-gold, #f0b32e)" stroke="var(--icon-gold, #f0b32e)" />
+  <path d="M12 7 Q15 3 17 5 Q18 7 12 7 Z" fill="var(--icon-gold, #f0b32e)" stroke="var(--icon-gold, #f0b32e)" />
+</svg>
