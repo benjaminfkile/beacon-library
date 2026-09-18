@@ -75,7 +75,7 @@ Everything is exported from the one entry point.
 | `startLeader`, `Leader`, `LeaderOptions` | the leader monitor |
 | `backoffMs`, `BACKOFF_MS`, `JOIN_DENIED_FIRST_WAIT_MS`, `HTTP_FALLBACK_INTERVAL_MS`, `HUB_REJECTION_REJOIN_THRESHOLD` | the constants of contracts 9.2 |
 | `BeaconLogger` | `{ info, warn, error }`, each `(fields, msg)`; a pino logger satisfies it as is |
-| `createFakeHub`, `createFakeRest` (from `testing.ts`, exported from the entry point) | fakes for consumers' tests |
+| `FakeHubClient`, `createFakeRest` (from `testing.ts`, exported from the entry point) | fakes for consumers' tests: a scripted hub and a recording REST client |
 
 Semantic versioning: a change to anything in this table that breaks a caller is a major version.
 
