@@ -47,7 +47,7 @@ const CHANNEL_EVENT = "ChannelEvent";
 
 function isJoinDenied(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err ?? "");
-  return /join.*denied|denied.*join|forbidden|401|403/i.test(msg);
+  return /join.*denied|denied.*join|not authorized|forbidden|401|403/i.test(msg);
 }
 
 export function startSocketLoop(opts: SocketLoopOptions): SocketLoop {

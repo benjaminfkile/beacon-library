@@ -68,6 +68,7 @@ interface Doc {
   schemaVersion: number;
   backoffMs: number[];
   joinDeniedFirstWaitMs: number;
+  joinDeniedErrorText: string;
   scenarios: Scenario[];
 }
 
@@ -88,6 +89,7 @@ describe("conformance scenarios", () => {
   it("declares constants that match the library", () => {
     expect(doc.backoffMs).toEqual([1000, 2000, 3000, 5000]);
     expect(doc.joinDeniedFirstWaitMs).toBe(10_000);
+    expect(doc.joinDeniedErrorText).toBe("Not authorized to join this channel");
   });
 });
 
@@ -122,7 +124,7 @@ class ScriptedHub implements HubClient {
       const kind = this.joinScripted.shift()!;
       if (kind === "resolve") return Promise.resolve(undefined as unknown as T);
       if (kind === "reject") return Promise.reject(new Error("join rejected"));
-      if (kind === "denied") return Promise.reject(new Error("join denied by gateway"));
+      if (kind === "denied") return Promise.reject(new Error(`HubException: ${doc.joinDeniedErrorText}`));
       return new Promise<T>(() => {});
     }
     return new Promise<T>((resolve, reject) => {
@@ -157,7 +159,7 @@ class ScriptedHub implements HubClient {
       const p = this.joinPending.shift()!;
       if (kind === "resolve") p.resolve();
       else if (kind === "reject") p.reject(new Error("join rejected"));
-      else if (kind === "denied") p.reject(new Error("join denied by gateway"));
+      else if (kind === "denied") p.reject(new Error(`HubException: ${doc.joinDeniedErrorText}`));
       return;
     }
     this.joinScripted.push(kind);

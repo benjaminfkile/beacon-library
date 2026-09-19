@@ -55,7 +55,7 @@ A beacon reconnects its hub socket forever, for every reason a socket can end, a
 | A half-open socket | the handshake or the join never settles; the close signal ends the wait at once |
 | The gateway evicts the beacon (`auth_expired`) | a re-join on the same connection |
 | The gateway evicts the beacon (any other reason) | a reconnect |
-| The join is denied (the key was rotated or the hub was switched off for this beacon) | the first retry waits 10 s, then the normal backoff; the send loop carries fixes over HTTP meanwhile |
+| The join is denied (the key was rotated or the hub was switched off for this beacon; the gateway's error reads `Not authorized to join this channel`, and `denied`, `forbidden`, `401`, and `403` are recognised too) | the first retry waits 10 s, then the normal backoff; the send loop carries fixes over HTTP meanwhile |
 | The hub client cannot be built | logged, backed off, retried |
 
 Every transition logs one INFO line through the caller's logger: `socket connected` with `{ channel, reconnectCount, attempt }`, `socket closed; reconnecting` with `{ channel, err, delayMs, attempt }` (`attempt` is the attempt that just ended, counted from 0), and the denied, evicted, and rejoined lines with the channel. A steady socket logs nothing. No line ever carries the beacon key.
@@ -116,6 +116,7 @@ A beacon that needs something the facade does not offer uses the loops directly;
   "schemaVersion": 1,
   "backoffMs": [1000, 2000, 3000, 5000],
   "joinDeniedFirstWaitMs": 10000,
+  "joinDeniedErrorText": "Not authorized to join this channel",
   "scenarios": [
     {
       "name": "transport close while connected",
@@ -134,6 +135,8 @@ A beacon that needs something the facade does not offer uses the loops directly;
   ]
 }
 ```
+
+`joinDeniedErrorText` is the text the gateway puts in a denied join's error; a harness rejects the join of a `joinDenied` step with an error whose message contains it, so every implementation is held to recognising the real text.
 
 A step is one of: a scripted hub event (`startResolves`, `startRejects`, `startNeverSettles`, `joinResolves`, `joinDenied`, `joinRejects`, `joinNeverSettles`, `close` with an optional `error`, `evict` with a `reason`, `buildThrows`), a clock move (`advanceMs`), a caller action (`rejoin`, `stop`), or an expectation (`expect` with the socket state, and any of `reconnectCount`, `rejoinCount`, `delayMs`, `hubsBuilt`). The scenarios cover every row of the section 2 table, plus: a clean close with no error, a close during the handshake, a close during the join, 25 consecutive closes (25 reconnects, the backoff sequence, then 5 s repeating), and `stop()` during a backoff wait. `tests/conformance.test.ts` runs every scenario against `startSocketLoop` with fake timers and the scripted fake hub; a scenario the runner does not understand fails the run.
 

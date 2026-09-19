@@ -90,6 +90,36 @@ describe("socket loop transitions", () => {
     expect(sleepCalls[0]).toBe(JOIN_DENIED_FIRST_WAIT_MS);
   });
 
+  it("waits 10 s on the first retry after the gateway answers not authorized", async () => {
+    const state = createBeaconState();
+    const sleepCalls: number[] = [];
+    let sleepCount = 0;
+    const built: FakeHubClient[] = [];
+    const loop = startSocketLoop({
+      build: () => {
+        const h = new FakeHubClient();
+        // First build: denied. Second build: hangs on join so we don't loop.
+        if (built.length === 0) {
+          h.joinBehavior = "denied";
+          h.joinError = new Error("HubException: Not authorized to join this channel");
+        }
+        built.push(h);
+        return h;
+      },
+      ingestChannel: "x:ingest",
+      key: "wbk_x",
+      state,
+      sleep: async (ms) => {
+        sleepCalls.push(ms);
+        sleepCount += 1;
+        // After the denied-wait sleep, stop the loop so the test finishes.
+        if (sleepCount >= 1) await loop.stop();
+      },
+    });
+    await drain();
+    expect(sleepCalls[0]).toBe(JOIN_DENIED_FIRST_WAIT_MS);
+  });
+
   it("survives a build() throw: reports, backs off, and retries", async () => {
     const state = createBeaconState();
     const sleepCalls: number[] = [];

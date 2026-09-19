@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "backoffMs": [1000, 2000, 3000, 5000],
   "joinDeniedFirstWaitMs": 10000,
+  "joinDeniedErrorText": "Not authorized to join this channel",
   "scenarios": [
     {
       "name": "transport close while connected",
