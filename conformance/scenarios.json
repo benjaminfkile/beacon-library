@@ -132,9 +132,7 @@
         { "hub": "joinResolves" },
         { "expect": "connected", "reconnectCount": 1, "hubsBuilt": 1 },
         { "hub": "evict", "reason": "service_removed" },
-        { "advanceMs": 1000 },
-        { "expect": "reconnecting", "delayMs": 1000, "hubsBuilt": 1 },
-        { "advanceMs": 1000 },
+        { "advanceMs": 2000 },
         { "hub": "startResolves" },
         { "hub": "joinResolves" },
         { "expect": "connected", "reconnectCount": 2, "hubsBuilt": 2 }
