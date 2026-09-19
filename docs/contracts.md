@@ -1279,6 +1279,18 @@ Uploaded icons are media assets of kind `svg` (`GET /admin/media?kind=svg`); the
 
 Contact messages and cookie notes have no automatic retention; they stay until an admin deletes them.
 
+#### Email quota (Admin)
+
+| Method and path | Success |
+|---|---|
+| `GET /admin/email/quota` | `200 EmailQuota` |
+
+```ts
+type EmailQuota = { available: boolean; dryRun: boolean; max24HourSend: number | null; sentLast24Hours: number | null; maxSendRate: number | null; queued: number; remaining: number | null; verifiedSubscribers: number; wouldExceed: boolean; fetchedAt: string };
+```
+
+`max24HourSend`, `sentLast24Hours`, and `maxSendRate` come from the SES v2 `GetAccount` call (its `SendQuota`), read through the instance role and cached in the node's memory for 60 seconds; `max24HourSend` is null when SES reports no limit (its value of -1). `queued` counts `alert_delivery` rows with `sent_at is null`. `verifiedSubscribers` counts `subscriber` rows with `channel = 'email' and verified_at is not null and unsubscribed_at is null`, the same people an alert goes to (7.7). `remaining` is `max24HourSend - sentLast24Hours - queued`, never below 0, and null when there is no limit. `wouldExceed` is true when `remaining` is not null and `verifiedSubscribers > remaining`: one more alert to every subscriber would not fit. When the SES call fails, or the API runs with `WMSFO_SES_DRY_RUN=true` and so has no SES client, the answer is still `200` with `available: false`, the three SES numbers and `remaining` null, `wouldExceed` false, and `queued` and `verifiedSubscribers` filled in; `dryRun` repeats the setting. The window is rolling, so the numbers are a snapshot at `fetchedAt` and the panel reads them again before every send. The endpoint reads nothing else, writes nothing, and records no audit row. Groups `admin` and `editor`, like the rest of 4.5; API keys cannot call it.
+
 #### Snapshot and live diagnostics (Admin)
 
 | Method and path | Success |
@@ -1992,6 +2004,8 @@ The `(subscriber_id, outbox_id)` uniqueness is what prevents double sends when l
 
 SES v2 API through the instance role in `<region>`, from `WMSFO_SES_FROM_ADDRESS`, optional configuration set `WMSFO_SES_CONFIGURATION_SET`. `<mail-domain>` is DKIM-verified and the account has production access. Hard bounces and complaints are handled by the SES account-level suppression list; the API does nothing further in v1.
 
+The API reads the account's sending quota with `GetAccount` for `GET /admin/email/quota` (4.5) and never blocks or delays a send because of it.
+
 Templates live in the API repository at `templates/email/<name>.html` and `.txt` with substitutions `{{eventName}}`, `{{scheduledAt}}` (rendered in `America/Denver`), `{{messageBody}}`, `{{customMessage}}` (the admin's text for a status alert; when absent the template's stock paragraph renders instead), `{{siteUrl}}`, `{{verifyUrl}}`, `{{unsubscribeUrl}}`, `{{contactName}}`, `{{contactEmail}}`, `{{contactMessage}}`.
 
 | Template | Subject | Body must contain |
@@ -2385,6 +2399,7 @@ Tests the artifacts drive: Vitest on the site store, page selection, section reg
 - A position is stored at most once per event: unique `(event_id, lat, lng)` on `location`, and the ingest insert runs `on conflict do nothing`; a repeat anywhere in the event is carried, so a replayed flight loops without growing the recording and beacons and the site stay unaware.
 - The hub can be switched off in two independent places, both in the API and the panel and neither in a beacon: per beacon (`hub_allowed`, denied at the authorize callback, the beacon falls to HTTP by its own contract) and for every visitor (`hub_enabled`, carried on the live object, the site runs on the poll). Beacons and the site never need a build for either.
 - Clearing a recording is `DELETE /admin/events/{id}/locations?beaconId=`: 204 on success, 409 while the event is live; `next_seq` is not reset; the audit action is `event.locations_cleared` and the site keeps whatever it holds until the leader's next tick rewrites the live object.
+- The panel warns before a send that would pass the SES 24 hour quota, from `GET /admin/email/quota`; the API never refuses a send for it.
 
 ## 15. Needs a decision
 

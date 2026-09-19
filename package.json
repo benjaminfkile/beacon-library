@@ -25,6 +25,7 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "contracts:check": "node scripts/check-contracts.mjs",
+    "check:no-infra": "node scripts/check-no-infra.mjs",
     "prepack": "npm run build"
   },
   "dependencies": {
