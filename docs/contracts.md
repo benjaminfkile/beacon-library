@@ -176,7 +176,7 @@ Keys appear in this order.
 
 Rules:
 
-- The location fields are the latest `location` row with `published = true` on the current event. Switching the active beacon leaves these fields as they are until the newly active beacon's first update arrives.
+- The location fields are the last published fix on the current event, stored or carried, read from `event.latest_fix` (the newest `location` row with `published = true` when `latest_fix` is null). Switching the active beacon leaves these fields as they are until the newly active beacon's first update arrives.
 - `cookieTally` is the count of cookies on the current event at the time the object is built while the event's status is 1, 2, 3, or 5. On entry into status 4 the counts are copied to `event.final_cookie_tally` and every later live object for that event carries that column unchanged. There is no cookie moderation: a cookie once left counts until its event is deleted.
 - Apply rule on the site, for an incoming object `L` when `store.live` exists (when it does not, replace):
   - `L.eventId !== store.live.eventId`: replace only when `L.publishedAt > store.live.publishedAt`.
@@ -1103,7 +1103,7 @@ Each group of endpoints names its policy (3.1): **Editor** admits both groups, *
 | `PATCH /admin/events/{id}/messages/{messageId}` **[snapshot]** | `body`, `eventTime` | `200 EventMessage` (no outbox row) | `404` |
 | `DELETE /admin/events/{id}/messages/{messageId}` **[snapshot]** | | `204` | `404` |
 | `GET /admin/events/{id}/locations?cursor=&limit=&beaconId=&publishedOnly=false` | | `200 Page<LocationRow>` ordered `seq` asc; with `Accept: text/csv` streams every matching row (paging ignored) with the header `seq,beaconId,published,recordedAt,receivedAt,lat,lng,speedMps,speedSource,altitudeM,headingDeg,accuracyM` | |
-| `DELETE /admin/events/{id}/locations?beaconId=` | | `204`; deletes the event's location rows, one beacon's when `beaconId` is given; `next_seq` is not reset; the audit action is `event.locations_cleared` with `before = { count, byBeacon: [ { beaconId, name, count } ] }`. The leader's next tick rewrites the live object from SQL, so the site sees the marker update in due course (contracts 1.2 lets a site keep the location it holds until reload; fine). | `404`, `409 event_live` |
+| `DELETE /admin/events/{id}/locations?beaconId=` | | `204`; deletes the event's location rows, one beacon's when `beaconId` is given; `next_seq` is not reset; without `beaconId` `event.latest_fix` is nulled, with `beaconId` it is nulled only when its `beaconId` matches; the audit action is `event.locations_cleared` with `before = { count, byBeacon: [ { beaconId, name, count } ] }`. The leader's next tick rewrites the live object from SQL, so the site sees the marker update in due course (contracts 1.2 lets a site keep the location it holds until reload; fine). | `404`, `409 event_live` |
 | `GET /admin/events/{id}/locations/impact` | | `200 DeleteImpact` (api.md 5b): one group `locations` per beacon with the count and the beacon's name; blocked with `This event is live. End it first.` while live | `404` |
 
 Status change transaction: lock the event row; check the rules above; for `statusId` 3 also read the active beacon (`is_active`) and refuse with `409 no_healthy_beacon` unless it exists, has `revoked_at` null, `stale_since` null, and `last_seen_at` not null (a healthy beacon is one the API has heard from within `beacon_stale_after_s`; the socket is not required, HTTP heartbeats count); update `status_id`; stamp `went_live_at = now()` on every entry into 3 and `ended_at = now()` on every entry into 4 (earlier stamps are overwritten; the admin can correct either with `PATCH`); on every entry into 4 also set `final_cookie_tally` to the current counts (`jsonb_object_agg` per type) and on every exit from 4 set it to null; insert `event_status_history`; insert outbox `event.status_changed { eventId, fromStatusId, toStatusId, notify }`; rebuild the snapshot; commit. After commit the node writes the live object with the new `eventStatusId` and `snapshotUrl` and publishes it. Any status may follow any other status; the admin decides, and `notify` decides whether subscribers are emailed (only entries into 2 and 3 produce emails, section 7.7).
@@ -1446,6 +1446,7 @@ create table event (
   final_cookie_tally jsonb,                       -- set on entry into status 4, null otherwise (1.2)
   status_notified_at timestamptz,                 -- when the current status was last announced; cleared by every status change (4.5)
   next_seq      bigint not null default 1,
+  latest_fix    jsonb,                            -- the last published fix on this event, stored or carried, set in the same update that advances next_seq (1.2, 7.2); nulled by DELETE /admin/events/{id}/locations (4.5)
   created_by    text not null,
   created_at    timestamptz not null default now(),
   updated_at    timestamptz not null default now()
@@ -1925,12 +1926,16 @@ insert into location (event_id, beacon_id, seq, recorded_at, received_at, lat, l
   returning seq, received_at;                                              -- no rows on conflict
 --
 -- stored branch (returning yielded a row):
-update event  set next_seq = next_seq + 1 where id = $event;
+update event  set next_seq = next_seq + 1,
+                  latest_fix = case when $is_active then $latest_fix_json::jsonb else latest_fix end
+              where id = $event;                           -- when the fix is published (the beacon is active), the same statement records it on the event row as { seq, beaconId, lat, lng, speedMps, altitudeM, headingDeg, accuracyM, recordedAt, receivedAt } so a rebuild of the live object never steps the seq back below this fix (1.2); an unpublished fix (a spare beacon) leaves latest_fix as it is
 update beacon set last_seen_at = now(), last_location_at = now(), stale_since = null,
                   fixes_stored = fixes_stored + 1 where id = $beacon;
 --
 -- carried branch (filter carried, or the insert conflicted): no row.
-update event  set next_seq = next_seq + 1 where id = $event;               -- next_seq still advances; that seq goes to the live object
+update event  set next_seq = next_seq + 1,
+                  latest_fix = case when $is_active then $latest_fix_json::jsonb else latest_fix end
+              where id = $event;                           -- next_seq still advances; that seq goes to the live object, and a published fix records latest_fix on the event row just like the stored branch (an unpublished fix leaves it alone)
 update beacon set last_seen_at = now(), last_location_at = now(), stale_since = null,
                   fixes_carried = fixes_carried + 1 where id = $beacon;   -- the beacon did deliver a fix
 --
