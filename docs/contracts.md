@@ -342,7 +342,7 @@ Pages appear in `navPosition` asc, `id` asc; sections in `position` asc, `id` as
 
 ```ts
 type Icon = { source: "library"; id: string } | { source: "media"; id: string };
-  // library: an id from the icons map; media: the id of a ready media asset of kind "svg"
+  // library: an id from the icons map; media: the id of a ready media asset of any kind
 type MediaRef = { mediaId: string; alt: string | null };      // alt null means the asset's own alt
 type Link = { label: Inline; href: string; icon: Icon | null; newTab: boolean };
   // href: absolute http or https URL, a mailto: address, or a site path starting with "/" (a page slug, optionally "#anchor")
@@ -411,7 +411,7 @@ type SiteSettings = {
 };
 ```
 
-**Validation, two levels.** The panel and the API run the same schemas. *Draft* validation, applied to every working-set write, is the kind's schema with `required`, `minLength`, `minItems`, and `minimum` removed at every level: types, enums, and unknown properties are enforced, incompleteness is not, and references are not checked. *Publish* validation, applied by `POST /admin/content/publish` and reported by `GET /admin/content/status`, is the full schema plus: every `MediaRef` and media-sourced `Icon` names a media asset with `state = ready` (and kind `svg` for icons); every library icon id exists; every `Link.href` and inline link matches the href rule; a site path href names an existing, non-hidden page slug; `anchor` values are unique within a page; `map` sections sit only on the `live` page; `settings` satisfies its schema. Problems are reported as `{ path, message }` with `path` a JSON pointer inside the section's `data` or `presentation`, the item's `data`, or the settings.
+**Validation, two levels.** The panel and the API run the same schemas. *Draft* validation, applied to every working-set write, is the kind's schema with `required`, `minLength`, `minItems`, and `minimum` removed at every level: types, enums, and unknown properties are enforced, incompleteness is not, and references are not checked. *Publish* validation, applied by `POST /admin/content/publish` and reported by `GET /admin/content/status`, is the full schema plus: every `MediaRef` and media-sourced `Icon` names a media asset with `state = ready`; every library icon id exists; every `Link.href` and inline link matches the href rule; a site path href names an existing, non-hidden page slug; `anchor` values are unique within a page; `map` sections sit only on the `live` page; `settings` satisfies its schema. Problems are reported as `{ path, message }` with `path` a JSON pointer inside the section's `data` or `presentation`, the item's `data`, or the settings.
 
 **Extensibility rules.** A new section or block kind is one schema file, one registry entry, and one component on each side; nothing else changes. New optional fields are added to a schema with a default and need no migration, no republish, and no panel change (forms are generated from the schemas). The primitives are the only shared vocabulary; a kind never invents its own shape for an icon, a link, a media reference, or text. `schemaVersion` on the document changes only when a published document could no longer be read by the previous site; the site treats an unknown value like an unknown snapshot version (1.9).
 
@@ -432,7 +432,7 @@ A variant exists only when the source is a raster image wider than that width; a
 
 **Tile pyramid.** A raster asset whose longest side is 2048 px or more also gets a Deep Zoom pyramid at confirm: `media/{mediaId}/dzi/poster.dzi` (the XML descriptor: tile size 254, overlap 1, format `png`) and `media/{mediaId}/dzi/poster_files/{level}/{col}_{row}.png` down to level 0, lossless PNG (the tiles are the poster's own pixels; the top level is the original at 1:1 and the viewer never zooms past it), every object immutable. A descriptor with `Format="jpg"` belongs to an asset confirmed before the PNG pyramid; the viewer reads the format from the descriptor. `dzi` is the descriptor's absolute CDN URL; the tiles resolve from the descriptor's own directory, as the Deep Zoom format defines. The pyramid lives with the asset: a new poster is a new asset with a new id and new URLs, so a viewer never sees a stale tile; deleting the asset deletes the pyramid with the rest of `media/{mediaId}/`. Smaller rasters have `dzi: null` and a viewer falls back to the original image.
 
-The icon library is a directory of SVG files in the API repository, `icons/<id>.svg`, each with a name and tags in `icons/library.json`. `icons` in the snapshot maps every id to `https://<cdn-domain>/icons/{sha256}.svg`. The library is written to the bucket by the migrating node under the migration lock whenever its hash differs from `icon_library_state.library_sha256`, followed by a snapshot rebuild, so a deploy that adds icons needs no operator action. Uploaded icons are media assets of kind `svg` and resolve through `media`. Every SVG, library or uploaded, passes the validator in 4.5 Media and renders through `<img>` only.
+The icon library is a directory of SVG files in the API repository, `icons/<id>.svg`, each with a name and tags in `icons/library.json`. `icons` in the snapshot maps every id to `https://<cdn-domain>/icons/{sha256}.svg`. The library is written to the bucket by the migrating node under the migration lock whenever its hash differs from `icon_library_state.library_sha256`, followed by a snapshot rebuild, so a deploy that adds icons needs no operator action. Uploaded icons are media assets of any kind and render through `<img>` from the media entry.
 
 ### 1.4 Flight recording: `routes/{sha256}.json`
 
@@ -1170,7 +1170,7 @@ An API key request on these three endpoints is `403 forbidden` whatever its capa
 | Method and path | Body | Success | Errors |
 |---|---|---|---|
 | `GET /admin/cookie-types` | | `200 { "items": CookieType[] }` by `sort`, `id` | |
-| `POST /admin/cookie-types` **[snapshot]** | `{ "name": "...", "sort": 10, "active": true, "icon": null }` (`name` 1 to 100; `sort` -1000 to 1000; `icon` an `Icon` or null; all four required) | `201 CookieType` | `409 event_live`, `404` (media icon), `409 media_not_ready`, `400` (media icon not svg, unknown library id) |
+| `POST /admin/cookie-types` **[snapshot]** | `{ "name": "...", "sort": 10, "active": true, "icon": null }` (`name` 1 to 100; `sort` -1000 to 1000; `icon` an `Icon` or null; all four required) | `201 CookieType` | `409 event_live`, `404` (media icon), `409 media_not_ready`, `400` (unknown library id) |
 | `PATCH /admin/cookie-types/{id}` **[snapshot]** | subset of `name`, `sort`, `active`, `icon` | `200 CookieType` | `404`, `409 event_live`, `409 media_not_ready`, `400` |
 | `DELETE /admin/cookie-types/{id}` **[snapshot]** | | `204`; its cookies are deleted with it (the tallies drop by their count; the impact says how many and warns while live) | `404`, `409 event_live` (cookie type writes are locked while an event is live) |
 
@@ -1256,7 +1256,7 @@ Orphan collection (leader chore, 7.6): a ready asset referenced nowhere gets `un
 |---|---|
 | `GET /admin/icons` | `200 { "items": IconInfo[] }`: the built-in library, ordered by `name`; `url` is the CDN URL the snapshot carries |
 
-Uploaded icons are media assets of kind `svg` (`GET /admin/media?kind=svg`); the panel's icon picker shows both.
+Uploaded icons are any ready media assets; the panel's icon picker shows the library and the media library.
 
 #### Settings (Admin)
 
