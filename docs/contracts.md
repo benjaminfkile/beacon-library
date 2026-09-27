@@ -341,9 +341,18 @@ Pages appear in `navPosition` asc, `id` asc; sections in `position` asc, `id` as
 **Shared primitives**, defined once in `contracts/schema/primitives.schema.json` and referenced by every kind:
 
 ```ts
-type Icon = { source: "library"; id: string } | { source: "media"; id: string };
+type Icon = { source: "library"; id: string; display?: Display | null } | { source: "media"; id: string; display?: Display | null };
   // library: an id from the icons map; media: the id of a ready media asset of any kind
-type MediaRef = { mediaId: string; alt: string | null };      // alt null means the asset's own alt
+type MediaRef = { mediaId: string; alt: string | null; display?: Display | null };  // alt null means the asset's own alt
+type Display = {                                               // every key optional; unknown keys are rejected
+  sizePx?: number;                                             // integer, 12 to 600
+  fit?: "contain" | "cover";
+  shape?: "none" | "circle" | "rounded" | "square";
+  paddingPx?: number;                                          // integer, 0 to 48
+  background?: "none" | "surface" | "muted" | "accent" | "night";
+  shadow?: boolean;
+  align?: "start" | "center" | "end";
+};
 type Link = { label: Inline; href: string; icon: Icon | null; newTab: boolean };
   // href: absolute http or https URL, a mailto: address, or a site path starting with "/" (a page slug, optionally "#anchor")
 type Inline = string;                                          // constrained inline markdown, below; 1 to 5000 characters
@@ -371,6 +380,8 @@ type Block =
 
 `card` and `iconSize` are optional: the API stores and publishes them only when set, and a reader treats an absent or null value as the default. The site never cards the `map` section whatever `card` says. The contract names the sizes; the pixel size of each one is the site's (site.md), not the contract's.
 
+`display` is an optional, bounded display setting on any `Icon` or `MediaRef`; the API stores and publishes it only when set, and validates it on every write (an out-of-range value is `400 validation_failed`). The site applies it where it draws the icon or the image, and `sizePx`, when set, wins over preset sizes such as `iconSize`, a hero's `iconSize`, an `icon` block's `size`, or a `media` block's `size`. A key left out keeps the site's default for that place. The schema writes the lower bounds of `sizePx` and `paddingPx` as `exclusiveMinimum` (11 and -1) so draft validation, which drops `minimum`, still enforces them.
+
 **Inline markdown.** `**bold**`, `*italic*`, `\`code\``, `[label](href)` with the same href rules as `Link`, a line break as a newline character, an icon as `{icon:<library-id>}` or `{icon:media:<mediaId>}`, and the placeholders `{event:name}`, `{event:year}`, `{event:scheduledAt}` (filled from `snapshot.event`; blank when there is no current event; `scheduledAt` formatted by the site in `America/Denver`). Everything else is literal text. No raw HTML is stored or rendered; the site's inline parser produces React elements, never `innerHTML`.
 
 **Section kinds.** One schema per kind at `contracts/schema/sections/<kind>.schema.json` (data) and, for kinds with items, `<kind>.item.schema.json`. `live` kinds carry configuration and read the live object and the snapshot; `content` kinds carry everything they render.
@@ -378,7 +389,7 @@ type Block =
 | Kind | Live | `data` | Items | Rule |
 |---|---|---|---|---|
 | `rich_text` | no | `{ blocks: Block[] }` (1 to 200) | none | |
-| `hero` | no | `{ title: Inline; tagline: Inline \| null; icon: Icon \| null; links: Link[]; height: "short" \| "tall"; iconSize?: "sm" \| "md" \| "lg" \| "xl" \| null }` (`links` 0 to 2; `iconSize` sizes `icon`, absent or null means `"sm"`) | none | the background image is `presentation.background` with `kind: "media"`, like any section |
+| `hero` | no | `{ title: Inline; tagline: Inline \| null; icon: Icon \| null; links: Link[]; height: "short" \| "tall"; iconSize?: "sm" \| "md" \| "lg" \| "xl" \| null; showLogo?: boolean \| null }` (`links` 0 to 2; `iconSize` sizes `icon`, absent or null means `"sm"`; `showLogo` true draws the site settings `logoMedia` in place of `icon` at `iconSize`, absent or null means false) | none | the background image is `presentation.background` with `kind: "media"`, like any section |
 | `media` | no | `{ layout: "single" \| "grid" \| "carousel"; columns: 2 \| 3 \| 4 }` | `{ media: MediaRef; caption: Inline \| null; link: Link \| null }` (1 to 50) | |
 | `links` | no | `{ heading: Inline \| null; style: "buttons" \| "cards" \| "list" }` | `{ link: Link; description: Inline \| null }` (1 to 50) | |
 | `icon_row` | no | `{ size: "sm" \| "md" \| "lg"; spacing: "tight" \| "normal" \| "loose" }` | `{ icon: Icon; label: Inline \| null }` (1 to 30) | |
@@ -412,8 +423,12 @@ type SiteSettings = {
   contactEmail: string | null;               // shown on the site; the API's notification inbox is configuration
   donateUrl: string | null;                  // absolute https URL
   analyticsEnabled: boolean;
+  logoMedia?: MediaRef | null;               // the site logo image; absent or null means the site keeps its built-in mark
+  headerShowsSiteName?: boolean | null;      // absent or null means true: the header shows siteName next to the logo
 };
 ```
+
+`logoMedia` and `headerShowsSiteName` are optional: the published document carries them only when they are not null, and a reader treats an absent or null value as the default. `logoMedia` is a `MediaRef` like any other: publish requires a ready asset, and the snapshot's `media` map carries it. `logo` stays as it is. The hero's `showLogo: true` draws the `logoMedia` image in place of the hero `icon`, sized by the hero's `iconSize`; the pixel size of each size name is the site's (site.md), not the contract's.
 
 **Validation, two levels.** The panel and the API run the same schemas. *Draft* validation, applied to every working-set write, is the kind's schema with `required`, `minLength`, `minItems`, and `minimum` removed at every level: types, enums, and unknown properties are enforced, incompleteness is not, and references are not checked. *Publish* validation, applied by `POST /admin/content/publish` and reported by `GET /admin/content/status`, is the full schema plus: every `MediaRef` and media-sourced `Icon` names a media asset with `state = ready`; every library icon id exists; every `Link.href` and inline link matches the href rule; a site path href names an existing, non-hidden page slug; `anchor` values are unique within a page; `map` sections sit only on the `live` page; `settings` satisfies its schema. Problems are reported as `{ path, message }` with `path` a JSON pointer inside the section's `data` or `presentation`, the item's `data`, or the settings.
 
@@ -429,8 +444,12 @@ type MediaEntry = {
   alt: string;                               // the asset's alt text, may be empty
   variants: { [width: string]: string };     // "480", "960", "1600": absolute CDN URLs of the WebP variants that exist; {} for svg and gif
   dzi: string | null;                        // absolute CDN URL of the Deep Zoom descriptor when a tile pyramid exists, else null
+  dark: { url: string; variants: { [width: string]: string } } | null;   // the dark mode version, same rules as url and variants; null when none
+  invertInDark: boolean;                     // true: the site inverts the asset's colors in dark mode
 };
 ```
+
+**Dark mode.** Any asset can carry a dark mode version (another ready asset, `MediaAsset.darkMediaId`) and an "invert in dark mode" switch (`invertInDark`), both off by default. Wherever the site draws an entry in dark mode it draws `dark` in its place when `dark` is not null (with `srcset` from `dark.variants` the same way), otherwise it inverts the image when `invertInDark` is true, otherwise it draws the entry as it is. The dark version's `url` and `variants` are embedded in the entry, so the dark version needs no entry of its own; it is referenced for orphan collection (7.6) while it is a ready asset's dark version. A dark version that is not `ready` is left out (`dark: null`).
 
 A variant exists only when the source is a raster image wider than that width; a 700 px upload has `variants: { "480": ... }`. The site renders a `MediaRef` as `<img>` with `srcset` from the variants plus the original at its own width and `sizes` from the section's width; it never constructs a media URL and never inlines SVG. Nothing in v2 overwrites or invalidates a media object.
 
@@ -949,13 +968,15 @@ type IconInfo = { id: string; name: string; tags: string[]; url: string };
 type MediaAsset = {
   id: string; filename: string; contentType: string; kind: "raster" | "svg" | "gif"; state: "pending" | "ready" | "orphaned";
   sizeBytes: number | null; width: number | null; height: number | null; sha256: string | null; alt: string; title: string;
-  url: string; variants: { [width: string]: string }; dziUrl: string | null; uploadedBy: string; createdAt: string; confirmedAt: string | null;
+  url: string; variants: { [width: string]: string }; dziUrl: string | null; darkMediaId: string | null; invertInDark: boolean;
+  uploadedBy: string; createdAt: string; confirmedAt: string | null;
   unreferencedSince: string | null; orphanedAt: string | null;
   audit: AuditStamp | null;
 };
   // dziUrl: absolute CDN URL of the Deep Zoom descriptor when the asset has a tile pyramid (1.3b), else null
+  // darkMediaId: the asset drawn in this one's place in dark mode (1.3b), else null; invertInDark: false by default
 type UploadTicket = { media: MediaAsset; uploadUrl: string; method: "PUT"; headers: { [name: string]: string }; expiresAt: string };
-type MediaUsage = { draftPages: { id: number; slug: string; title: string }[]; versionCount: number; sponsors: { id: number; name: string }[]; cookieTypes: { id: number; name: string }[]; siteSettings: boolean };
+type MediaUsage = { draftPages: { id: number; slug: string; title: string }[]; versionCount: number; sponsors: { id: number; name: string }[]; cookieTypes: { id: number; name: string }[]; siteSettings: boolean; darkVersionOf: { id: string; filename: string }[] };
 type ContentVersionInfo = { id: number; sha256: string; label: string | null; publishedBy: string; publishedAt: string; pageCount: number; sectionCount: number; audit: AuditStamp | null };
 type ProblemRef = Problem & { pageId: number | null; sectionId: number | null; itemId: number | null };   // all null: site settings
 type ContentStatus = { published: ContentVersionInfo | null; draftSha256: string; hasUnpublishedChanges: boolean; problems: ProblemRef[]; draftUpdatedAt: string | null };
@@ -1245,14 +1266,14 @@ The pipeline is presign, upload, confirm. Media bytes never pass through the API
 | `POST /admin/media/{id}/confirm` | none | `200 MediaAsset` with `state: "ready"`. The API reads the object, checks the size against the ticket and the limit, sniffs the type (must match `contentType`), validates SVG (below), decodes raster with a 40-megapixel ceiling, records `width`, `height`, `sha256`, derives `w480`, `w960`, `w1600` WebP variants for raster narrower widths than the source (never for gif or svg), cuts the Deep Zoom tile pyramid for a raster whose longest side is 2048 px or more (1.3b), PUTs them all, removes the pending tag, and updates the row. | `404` (row), `404 upload_not_found` (object missing), `409 media_not_pending`, `413`, `400 validation_failed` (sniff mismatch, SVG rules, decode failure; the object is deleted and the row removed) |
 | `GET /admin/media/{id}` | | `200 MediaAsset` | `404` |
 | `GET /admin/media/{id}/usage` | | `200 MediaUsage` | `404` |
-| `PATCH /admin/media/{id}` **[snapshot]** | subset of `alt`, `title` | `200 MediaAsset` | `404` |
-| `DELETE /admin/media/{id}` | | `204`; deletes every object under `media/{id}/` and the row, in any state; every reference is cleared first (section and item image fields, sponsor logos, event posters, the site logo and favicon fall back to the library icon), listed under `unlinks` | `404` |
+| `PATCH /admin/media/{id}` **[snapshot]** | subset of `alt`, `title`, `darkMediaId` (the id of another `ready` asset, or `null` to clear), `invertInDark` (boolean) | `200 MediaAsset` | `404` (the asset or `darkMediaId`), `409 media_not_ready` (`darkMediaId` not ready), `400 validation_failed` (`darkMediaId` is the asset itself) |
+| `DELETE /admin/media/{id}` | | `204`; deletes every object under `media/{id}/` and the row, in any state; every reference is cleared first (section and item image fields, sponsor logos, event posters, the site logo and favicon fall back to the library icon, and the assets whose dark version it is, listed as "dark version of <filename>"), listed under `unlinks` | `404` |
 
-A ticket whose object never arrives expires by the bucket's lifecycle rule (tag `state=pending`, 1 day) and its row by the nightly cleanup (7.6). In use means referenced by the working set, by any retained version, by a sponsor, by a cookie type, or by the site settings draft.
+A ticket whose object never arrives expires by the bucket's lifecycle rule (tag `state=pending`, 1 day) and its row by the nightly cleanup (7.6). In use means referenced by the working set, by any retained version, by a sponsor, by a cookie type, by the site settings draft, or as another asset's dark version (`MediaUsage.darkVersionOf`, shown as "dark version of <filename>").
 
 SVG validation (library icons, uploaded SVG): the document is parsed without DTDs or external resolution and rejected with `400 validation_failed` on field `file` when the root element is not `svg`, or it contains a `script` or `foreignObject` element, any attribute whose name starts with `on`, or an `href` or `xlink:href` whose value starts with `http:`, `https:`, or `javascript:`. The stored bytes are the uploaded bytes.
 
-Orphan collection (leader chore, 7.6): a ready asset referenced nowhere gets `unreferencedSince`; after 30 days it is tagged `state=orphaned` on every object and marked `orphaned`; the lifecycle rule deletes the objects 7 days later and the chore deletes the row after 8. A reference appearing again during those 7 days removes the tag and returns the asset to `ready`. An orphaned asset is listed by `GET /admin/media?state=orphaned` so an editor can see what is about to go.
+Orphan collection (leader chore, 7.6): an asset that is a ready asset's dark version counts as referenced; a ready asset referenced nowhere gets `unreferencedSince`; after 30 days it is tagged `state=orphaned` on every object and marked `orphaned`; the lifecycle rule deletes the objects 7 days later and the chore deletes the row after 8. A reference appearing again during those 7 days removes the tag and returns the asset to `ready`. An orphaned asset is listed by `GET /admin/media?state=orphaned` so an editor can see what is about to go.
 
 #### Icons (Editor)
 
@@ -1398,7 +1419,7 @@ Actions are `create`, `update`, `delete` for the generic writes and the endpoint
 | `kind_not_allowed` | 409 | section create and move onto a page whose role the kind excludes |
 | `content_unchanged` | 409 | `POST /admin/content/publish` |
 | `content_invalid` | 422 | `POST /admin/content/publish`; `details.problems` |
-| `media_not_ready` | 409 | a sponsor or cookie type references a media asset that is not `ready` |
+| `media_not_ready` | 409 | a sponsor, cookie type, event poster, or dark version references a media asset that is not `ready` |
 | `media_not_pending` | 409 | confirm on a non-pending asset |
 | `upload_not_found` | 404 | confirm when the object never arrived |
 | `preview_token_invalid` | 404 | `GET /preview/document` |
@@ -1992,7 +2013,7 @@ Poll `GET <WMSFO_GATEWAY_INTERNAL_URL>/internal/leader` with `X-Gateway-Realtime
 | Outbox publish | 2 s | `update outbox set claimed_at = now(), attempts = attempts + 1 where id in (select id from outbox where published_at is null and attempts < 5 and (claimed_at is null or claimed_at < now() - interval '2 minutes') order by id limit 50 for update skip locked) returning *`; process each row per 7.7; on success `update outbox set published_at = now() where id = $1`; on failure set `last_error`. A row that reaches 5 attempts stays unpublished and appears in the logs. |
 | Alert send | 5 s | up to `5 * WMSFO_ALERT_SEND_PER_SEC` `alert_delivery` rows with `sent_at` null and `attempts < 5`, oldest first, sent through SES at no more than `WMSFO_ALERT_SEND_PER_SEC` per second; on success set `sent_at`, `ses_message_id`; on failure set `last_error`, `attempts += 1` |
 | Stale beacon flag | 15 s | `update beacon set stale_since = now() where revoked_at is null and stale_since is null and last_seen_at is not null and greatest(coalesce(last_heartbeat_at, '-infinity'), coalesce(last_location_at, '-infinity')) < now() - make_interval(secs => <beacon_stale_after_s>)` (a heartbeat or a stored location clears the flag, 4.2 and 7.2) |
-| Media orphan collection | 1 h | compute the referenced media id set (working set, every retained `content_version.media_ids`, `sponsor.logo_media_id`, media-sourced `cookie_type.icon`, the site settings draft); set `unreferenced_since = now()` on `ready` rows outside the set that have none, clear it on rows inside the set; tag and mark `orphaned` the rows whose `unreferenced_since` is older than 30 days; untag and return to `ready` any `orphaned` row that is back in the set; delete rows `orphaned` more than 8 days ago (the lifecycle rule removed their objects after 7) |
+| Media orphan collection | 1 h | compute the referenced media id set (working set, every retained `content_version.media_ids`, `sponsor.logo_media_id`, media-sourced `cookie_type.icon`, the site settings draft, the `dark_media_id` of every `ready` asset); set `unreferenced_since = now()` on `ready` rows outside the set that have none, clear it on rows inside the set; tag and mark `orphaned` the rows whose `unreferenced_since` is older than 30 days; untag and return to `ready` any `orphaned` row that is back in the set; delete rows `orphaned` more than 8 days ago (the lifecycle rule removed their objects after 7) |
 | Nightly cleanup | 09:00 UTC (02:00 Mountain) | delete `beacon_enrollment_token` rows expired or consumed more than 24 h ago; `outbox` rows published more than 30 days ago, except the alert topics (`event.status_changed`, `event.status_notified`, `event.message_posted`), which stay 400 days so a person's alert history (4.4 `GET /me/alerts`) spans a season (their `alert_delivery` rows cascade with them); `subscriber` rows never verified whose `created_at` is older than 7 days; `beacon_log` rows older than 30 days; `preview_token` rows expired more than 24 h ago; `media_asset` rows still `pending` after 2 days (their objects expired by the lifecycle rule after 1) |
 
 At `WMSFO_ALERT_SEND_PER_SEC` = 10, twenty thousand verified subscribers take about 33 minutes per alert; the SES sending quota must be at or above that rate before the event.
