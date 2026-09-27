@@ -382,7 +382,7 @@ type Block =
 
 `display` is an optional, bounded display setting on any `Icon` or `MediaRef`; the API stores and publishes it only when set, and validates it on every write (an out-of-range value is `400 validation_failed`). The site applies it where it draws the icon or the image, and `sizePx`, when set, wins over preset sizes such as `iconSize`, a hero's `iconSize`, an `icon` block's `size`, or a `media` block's `size`. A key left out keeps the site's default for that place. The schema writes the lower bounds of `sizePx` and `paddingPx` as `exclusiveMinimum` (11 and -1) so draft validation, which drops `minimum`, still enforces them.
 
-**Inline markdown.** `**bold**`, `*italic*`, `\`code\``, `[label](href)` with the same href rules as `Link`, a line break as a newline character, an icon as `{icon:<library-id>}` or `{icon:media:<mediaId>}`, and the placeholders `{event:name}`, `{event:year}`, `{event:scheduledAt}` (filled from `snapshot.event`; blank when there is no current event; `scheduledAt` formatted by the site in `America/Denver`). Everything else is literal text. No raw HTML is stored or rendered; the site's inline parser produces React elements, never `innerHTML`.
+**Inline markdown.** `**bold**`, `*italic*`, `\`code\``, `[label](href)` with the same href rules as `Link`, a line break as a newline character, an icon as `{icon:<library-id>}` or `{icon:media:<mediaId>}`, and the placeholders `{event:name}`, `{event:year}`, `{event:scheduledAt}` (filled from `snapshot.event`; blank when there is no current event; `scheduledAt` formatted by the site in the viewer's timezone). Everything else is literal text. No raw HTML is stored or rendered; the site's inline parser produces React elements, never `innerHTML`.
 
 **Section kinds.** One schema per kind at `contracts/schema/sections/<kind>.schema.json` (data) and, for kinds with items, `<kind>.item.schema.json`. `live` kinds carry configuration and read the live object and the snapshot; `content` kinds carry everything they render.
 
@@ -912,6 +912,7 @@ type AlertItem = { id: number; subscriptionId: number; address: string; kind: "e
 type Event = {
   id: number; year: number; name: string; statusId: number; isCurrent: boolean;
   scheduledAt: string | null; wentLiveAt: string | null; endedAt: string | null;
+  scheduleTimeZone: string | null;   // admin only: the IANA zone id (e.g. America/Denver) scheduledAt was entered in; null means unset
   fundsPercent: number; routeId: number | null; routeUrl: string | null;
   routeImageMediaId: string | null; routeImage: MediaAsset | null;
   statusNotifiedAt: string | null;   // when the current status was last announced to subscribers (a status change with notify, or POST .../notify); null since the last change otherwise
@@ -1076,7 +1077,7 @@ Rules: `name` 1 to 100, `email` a valid address 3 to 254, `message` 1 to 2000. S
 
 **`POST /subscriptions/unsubscribe`**. The token comes from either place: the query string `?token=wsu_...` or a JSON body `{ "token": "wsu_..." }`. The query form exists for RFC 8058: the `List-Unsubscribe` header names `https://<api-domain>/subscriptions/unsubscribe?token=wsu_...` and mail clients POST the form body `List-Unsubscribe=One-Click` to it; the API accepts `application/x-www-form-urlencoded` there and ignores the form body. The site page `/alerts/unsubscribe` reads `token` from its query string and sends the JSON form. Sets `unsubscribed_at`. `204`. Idempotent. Unknown token: `404 not_found`.
 
-**`GET /preview/document?token=wpv_...`**. The one public read, used only by the site's `/preview` route inside the admin panel's preview frame (4.5 Content). Answers `200 ContentBundle`: the working set as it would publish (hidden rows omitted), the media map for it, and the icon map, with `Cache-Control: no-store` and a strong `ETag`: the quoted lowercase sha256 hex of the exact response body. A request whose `If-None-Match` carries that `ETag` answers `304 Not Modified` with the same `ETag` and no body, so a caller polling an unchanged draft downloads nothing; any draft change changes the body and so the `ETag`. Unknown or expired token: `404 preview_token_invalid`. Rate limited per client IP (4.0).
+**`GET /preview/document?token=wpv_...`**. The one public read, used only by the site's `/preview` route inside the admin panel's preview frame (4.5 Content). Answers `200 ContentBundle`: the working set as it would publish (hidden rows omitted), the media map for the media it references plus the media the snapshot's media map adds beyond the content (sponsor logos, cookie type media icons, the current event's route poster; 1.3b), and the icon map, with `Cache-Control: no-store` and a strong `ETag`: the quoted lowercase sha256 hex of the exact response body. A request whose `If-None-Match` carries that `ETag` answers `304 Not Modified` with the same `ETag` and no body, so a caller polling an unchanged draft downloads nothing; any draft change changes the body and so the `ETag`. Unknown or expired token: `404 preview_token_invalid`. Rate limited per client IP (4.0).
 
 **`POST /qr-codes/{tag}/scans`**. One printed-code visit (4.5a Public). Body `{ "referrer": "https://..." }`, optional. Always `204`. Sent by the site's `/q/:tag` route with `navigator.sendBeacon` before it navigates.
 
@@ -1114,9 +1115,9 @@ Each group of endpoints names its policy (3.1): **Editor** admits both groups, *
 | Method and path | Body | Success | Endpoint-specific errors |
 |---|---|---|---|
 | `GET /admin/events` | | `200 { "items": Event[] }` ordered `year` desc | |
-| `POST /admin/events` **[snapshot]** | `{ "year": 2026, "name": "...", "scheduledAt": null, "fundsPercent": 0, "routeId": null, "inheritRoute": true }` (`year`, `name`, `inheritRoute` required; `scheduledAt` defaults null; `fundsPercent` defaults 0; `routeId` defaults null; `year` 2000 to 2100 unique; `name` 1 to 200; `fundsPercent` 0 to 100) | `201 Event` with `statusId` 1, `isCurrent` false. `inheritRoute: true` requires `routeId` null (`400` otherwise) and copies the `route_id` of the event with the greatest `year` that has one (none: no route); `inheritRoute: false` uses `routeId` as given. The route image is never inherited; `route_image_media_id` starts null and is set with `PATCH`. | `400`, `404 not_found` (routeId), `409 year_taken` |
+| `POST /admin/events` **[snapshot]** | `{ "year": 2026, "name": "...", "scheduledAt": null, "fundsPercent": 0, "routeId": null, "inheritRoute": true, "scheduleTimeZone": null }` (`year`, `name`, `inheritRoute` required; `scheduledAt` defaults null; `fundsPercent` defaults 0; `routeId` defaults null; `scheduleTimeZone` defaults null and is an IANA zone id such as `America/Denver`, `400 validation_failed` on an unknown id; `year` 2000 to 2100 unique; `name` 1 to 200; `fundsPercent` 0 to 100) | `201 Event` with `statusId` 1, `isCurrent` false. `inheritRoute: true` requires `routeId` null (`400` otherwise) and copies the `route_id` of the event with the greatest `year` that has one (none: no route); `inheritRoute: false` uses `routeId` as given. The route image is never inherited; `route_image_media_id` starts null and is set with `PATCH`. | `400`, `404 not_found` (routeId), `409 year_taken` |
 | `GET /admin/events/{id}` | | `200 Event` | |
-| `PATCH /admin/events/{id}` **[snapshot]** | Any of `name`, `year`, `scheduledAt`, `wentLiveAt`, `endedAt`, `fundsPercent`, `routeId`, `routeImageMediaId` (a ready raster media asset id; an empty string unlinks; null or absent leaves it unchanged, the same convention as `logoMediaId`) | `200 Event` | `404` (event, route, or media), `409 year_taken`, `409 scheduled_at_required` (`scheduledAt: null` while `statusId` is 2), `409 media_not_ready`, `400 validation_failed` (an svg or gif asset as the route image) |
+| `PATCH /admin/events/{id}` **[snapshot]** | Any of `name`, `year`, `scheduledAt`, `wentLiveAt`, `endedAt`, `fundsPercent`, `routeId`, `routeImageMediaId` (a ready raster media asset id; an empty string unlinks; null or absent leaves it unchanged, the same convention as `logoMediaId`), `scheduleTimeZone` (an IANA zone id sets it, null clears it, absent leaves it unchanged; `400 validation_failed` on an unknown id) | `200 Event` | `404` (event, route, or media), `409 year_taken`, `409 scheduled_at_required` (`scheduledAt: null` while `statusId` is 2), `409 media_not_ready`, `400 validation_failed` (an svg or gif asset as the route image) |
 | `DELETE /admin/events/{id}` **[snapshot]** | | `204`; deletes its messages, cookies, status history, locations, and pending alert outbox rows | `404`, `409 event_live` (status 3), `409 event_current` (`isCurrent`; make another event current first) |
 | `POST /admin/events/{id}/current` **[snapshot]** | none | `200 Event` (`isCurrent` true; the previous current event's flag cleared in the same transaction). Idempotent: on the already-current event, `200 Event` with no snapshot rebuild and no live-object write, in every status. | `409 current_event_live` (another event is current and live) |
 | `POST /admin/events/{id}/status` **[snapshot]** | `{ "statusId": 3, "notify": true, "message": null }` (`statusId` and `notify` required; `message` optional, 1 to 1000 characters, the custom text the alert carries instead of the stock paragraph, ignored when `notify` is false) | `200 Event` | `400` (unknown status), `409 event_status_unchanged` (same status), `409 event_not_current` (3 requested and `isCurrent` false), `409 another_event_live` (3 requested while another event has status 3), `409 scheduled_at_required` (2 requested and `scheduledAt` null), `409 no_healthy_beacon` (3 requested and no beacon is active, or the active beacon is revoked or stale; `details.beacon` carries the active beacon's `id`, `name`, `lastSeenAt`, `staleSince`, or null when none is active) |
@@ -1246,7 +1247,7 @@ The six role pages are created by the seed (sql.md 6) with slugs `no-event`, `pl
 | Method and path | Body | Success | Errors |
 |---|---|---|---|
 | `GET /admin/content/status` | | `200 ContentStatus`: the newest version, the working set's hash, whether they differ, and every publish-level problem in the working set | |
-| `GET /admin/content/draft` | | `200 ContentBundle` for the working set (what a publish would produce) | |
+| `GET /admin/content/draft` | | `200 ContentBundle` for the working set (what a publish would produce); the media map holds the media the document references plus sponsor logos, cookie type media icons, and the current event's route poster, as in `GET /preview/document` | |
 | `POST /admin/content/publish` **[snapshot]** | `{ "label": "December copy" }` (`label` null or 1 to 100) | `201 ContentVersionInfo`. Builds the document from the working set (hidden rows omitted, 1.3a order), validates at the publish level, inserts `content_version` with the referenced media ids, deletes versions beyond the newest 50, rebuilds the snapshot, commits, writes the live object. | `422 content_invalid` (`details.problems: ProblemRef[]`), `409 content_unchanged` (hash equals the newest version's), `502 snapshot_write_failed` |
 | `GET /admin/content/versions` | | `200 { "items": ContentVersionInfo[] }` newest first | |
 | `GET /admin/content/versions/{id}` | | `200 ContentVersionInfo & { "document": ContentDocument }` | `404` |
@@ -1463,6 +1464,7 @@ create table event (
   status_id     smallint not null references event_status (id),
   is_current    boolean not null default false,
   scheduled_at  timestamptz,
+  schedule_time_zone text,                        -- admin only: IANA zone id scheduled_at was entered in; null means unset; alert emails render in it (7.8)
   went_live_at  timestamptz,
   ended_at      timestamptz,
   funds_percent integer not null default 0 check (funds_percent between 0 and 100),
@@ -2036,13 +2038,13 @@ SES v2 API through the instance role in `<region>`, from `WMSFO_SES_FROM_ADDRESS
 
 The API reads the account's sending quota with `GetAccount` for `GET /admin/email/quota` (4.5) and never blocks or delays a send because of it.
 
-Templates live in the API repository at `templates/email/<name>.html` and `.txt` with substitutions `{{eventName}}`, `{{scheduledAt}}` (rendered in `America/Denver`), `{{messageBody}}`, `{{customMessage}}` (the admin's text for a status alert; when absent the template's stock paragraph renders instead), `{{siteUrl}}`, `{{verifyUrl}}`, `{{unsubscribeUrl}}`, `{{contactName}}`, `{{contactEmail}}`, `{{contactMessage}}`.
+Templates live in the API repository at `templates/email/<name>.html` and `.txt` with substitutions `{{eventName}}`, `{{scheduledAt}}` (rendered in the event's `scheduleTimeZone`, `America/Denver` when unset, followed by the zone's IANA id in parentheses), `{{messageBody}}`, `{{customMessage}}` (the admin's text for a status alert; when absent the template's stock paragraph renders instead), `{{siteUrl}}`, `{{verifyUrl}}`, `{{unsubscribeUrl}}`, `{{contactName}}`, `{{contactEmail}}`, `{{contactMessage}}`.
 
 | Template | Subject | Body must contain |
 |---|---|---|
 | `subscription_verify` | `Confirm your Santa tracker alerts` | `https://<site-domain>/alerts/verify?token=wsv_...` |
 | `event_planned` | `Santa's flight is being planned` | event name, the stock paragraph or `{{customMessage}}`, link to `https://<site-domain>/`, unsubscribe link |
-| `event_scheduled` | `Santa's flight is scheduled` | event name, `scheduledAt` in Mountain time, the stock paragraph or `{{customMessage}}`, unsubscribe link |
+| `event_scheduled` | `Santa's flight is scheduled` | event name, `scheduledAt` in the event's `scheduleTimeZone` (`America/Denver` when unset) with the IANA id in parentheses, the stock paragraph or `{{customMessage}}`, unsubscribe link |
 | `event_live` | `Santa just lifted off` | link to `https://<site-domain>/`, the stock paragraph or `{{customMessage}}`, unsubscribe link |
 | `event_ended` | `Santa is back at the North Pole` | event name, the stock paragraph or `{{customMessage}}`, unsubscribe link |
 | `event_cancelled` | `Santa's flight is cancelled` | event name, the stock paragraph or `{{customMessage}}`, unsubscribe link |
