@@ -153,7 +153,8 @@ The API hands the same bytes to the CDN PUT and to the hub publish (section 2.6)
   "accuracyM": 6,
   "recordedAt": "2026-12-22T01:31:07.000Z",
   "receivedAt": "2026-12-22T01:31:07.412Z",
-  "publishedAt": "2026-12-22T01:31:07.430Z"
+  "publishedAt": "2026-12-22T01:31:07.430Z",
+  "onlineCount": 214
 }
 ```
 
@@ -174,6 +175,7 @@ Keys appear in this order.
 | `recordedAt` | `rfc3339 \| null` | same as `seq` | The fix time the beacon sent. Informational; it never decides anything. |
 | `receivedAt` | `rfc3339 \| null` | same as `seq` | When the API stored the update. |
 | `publishedAt` | `rfc3339` | never | When this object was built. Used for the "last update" display and the tie-break below. |
+| `onlineCount` | `int \| null` | the count is not being published: `eventStatusId` is not 3, `hubEnabled` is false, or the gateway count read failed, timed out, or is not configured | How many sockets are subscribed to the site's `<service>:location` channel, from the gateway's `GET /internal/presence/<service>:location/count` (7.4). The site shows the count only while it is non-null and hides it otherwise; the map section's `overlays.onlineCount` hides it on a page. |
 
 Rules:
 
@@ -187,6 +189,7 @@ Rules:
   - Otherwise replace.
 
   `publishedAt` comparisons are ordinal string comparisons; the canonical format (fixed width, three fractional digits, `Z`) makes that equivalent to time order. This makes the hub and the poll safe to mix for a browser that already holds the newer object; the CDN copy is corrected by the rewrite rule in 7.4, because an ingest PUT built before a status change can land after the admin node's PUT.
+- `onlineCount` is informational and never takes part in the apply rule; a write that could not read the count carries null rather than waiting for it.
 - Nothing on this object is derived by the site except the page choice from `eventStatusId`.
 
 ### 1.3 Snapshot: `snapshots/{sha256}.json`
@@ -401,7 +404,7 @@ type Block =
 | `countdown` | yes | `{ heading: Inline \| null }` | none | reads `snapshot.event.scheduledAt`; renders nothing unless `live.eventStatusId` is 2 and `now < scheduledAt` |
 | `event_times` | yes | `{ fields: ("scheduledAt" \| "wentLiveAt" \| "endedAt" \| "airborneFor")[]; labels: { scheduledAt: Inline; wentLiveAt: Inline; endedAt: Inline; airborneFor: Inline } }` (`fields` 1 to 4, distinct) | none | each field renders only when its value exists; `airborneFor` is the elapsed time since `wentLiveAt` while status is 3 |
 | `latest_message` | yes | `{ heading: Inline \| null; style: "card" \| "ticker" }` | none | reads `snapshot.event.latestMessage`; renders nothing when null |
-| `map` | yes | `{ themes: string[]; defaultTheme: string; defaultCenter: { lat: number; lng: number }; defaultZoom: number; controls: { themePicker: boolean; terrain: boolean; snow: boolean; flightHistory: boolean; timeLabels: boolean; location: boolean; dataRow: boolean }; flightHistoryDefault: boolean; overlays: { liveIndicator: boolean; liftoffTimer: boolean; latestMessage: boolean; leaderboardPanel: boolean; sponsorCarousel: boolean; cookieControl: boolean; distanceChip: boolean } }` (`themes` 1 to 10 from the site's theme registry; `defaultTheme` in `themes`; `defaultZoom` 3 to 18; `flightHistoryDefault` defaults false) | none | allowed only on the page with role `live`; reads the live object and `snapshot.event.flightHistory`; the full-viewport live screen of site.md section 8 |
+| `map` | yes | `{ themes: string[]; defaultTheme: string; defaultCenter: { lat: number; lng: number }; defaultZoom: number; controls: { themePicker: boolean; terrain: boolean; snow: boolean; flightHistory: boolean; timeLabels: boolean; location: boolean; dataRow: boolean }; flightHistoryDefault: boolean; overlays: { liveIndicator: boolean; liftoffTimer: boolean; latestMessage: boolean; leaderboardPanel: boolean; sponsorCarousel: boolean; cookieControl: boolean; distanceChip: boolean; onlineCount?: boolean } }` (`themes` 1 to 10 from the site's theme registry; `defaultTheme` in `themes`; `defaultZoom` 3 to 18; `flightHistoryDefault` defaults false; `overlays.onlineCount` absent means true and shows the live object's `onlineCount` while it is non-null) | none | allowed only on the page with role `live`; reads the live object and `snapshot.event.flightHistory`; the full-viewport live screen of site.md section 8 |
 | `leaderboard` | yes | `{ heading: Inline \| null; variant: "panel" \| "full"; emptyText: Inline }` | none | reads `live.cookieTally` joined with `snapshot.cookieTypes` |
 | `sponsor_carousel` | yes | `{ heading: Inline \| null; logoWidth: 480 \| 960 }` | none | reads `snapshot.sponsors` and `lingerMs` |
 | `sponsor_grid` | yes | `{ heading: Inline \| null; columns: 2 \| 3 \| 4; showYears: boolean; emptyText: Inline }` | none | reads `snapshot.sponsors` |
@@ -2023,6 +2026,8 @@ select key, value from app_setting;   -- on version change, and at least every 5
 ```
 
 Memory is refreshed from every row read. When `version` moved and `lastWrittenVersion` is not that version: if `wroteForLocationSinceVersionChange` is true, the node writes the live object once more from the refreshed memory, publishes it, and clears the flag; otherwise it refreshes memory only and neither writes nor publishes (1.8). When `version` did not move, the leader (7.5) compares the refreshed `cookieTally` with the tally in the object it last wrote and, while the event is live, writes and publishes the live object once when they differ, so a cookie reaches the CDN within a tick whether or not a beacon is sending locations. Every node converges within one tick, and the CDN copy is corrected within one tick when an ingest PUT built before a status change landed after the admin node's PUT.
+
+Online count. Every live-object write, whichever trigger (a stored location, an admin commit, a tick rewrite), fills `onlineCount` (1.2) only while the current event's status is 3 and `hub_enabled` is true; otherwise it writes null and makes no gateway call. While those hold, the writing node reads `GET <WMSFO_GATEWAY_INTERNAL_URL>/internal/presence/<service>:location/count` with `X-Gateway-Realtime-Token: <GATEWAY_REALTIME_TOKEN>` (the answer is `{ channel, count }`, 1 s timeout) and caches the answer, or the failure as null, for one second, so the write path costs each node at most one count read per second however many writes it makes. The write waits at most 250 ms for a read in flight; a slower read, a timeout, a non-2xx, a network error, or a missing token writes null, and the write is never failed or retried because of the count. A slow read still fills the cache for the next write.
 
 ### 7.5 Leadership
 
