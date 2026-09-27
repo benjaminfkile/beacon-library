@@ -881,7 +881,7 @@ Capabilities, one per endpoint group of 4.5, each named after its heading: `even
 | Body limits | 64 KB for JSON, 256 KB for section, item, and site settings bodies, 5 MB for route uploads, 2 MB for beacon logs, 8 KB for heartbeats. Media bytes never pass through the API (presigned upload, 4.5 Media): 20 MB for raster and GIF, 1 MB for SVG, checked at confirm. Over the limit: `413 payload_too_large`. |
 | Auth headers | `X-Beacon-Key` (beacon), `Authorization: Bearer <id-token>` (person, admin), `Authorization: Bearer wak_…` (API key, 3.6). A request that carries `X-Beacon-Key` and `Authorization` is `400 validation_failed`. |
 | Common errors | `400 validation_failed`, `401 unauthenticated`, `403 forbidden`, `404 not_found`, `405` (no body), `413 payload_too_large`, `415 unsupported_media_type`, `429 rate_limited`, `500 internal_error`, `502 upstream_failed`. Listed per endpoint only when the endpoint adds a code. |
-| CORS | The API answers CORS for the exact origins in `WMSFO_CORS_ORIGINS`: methods `GET, POST, PUT, PATCH, DELETE`, headers `Authorization, Content-Type, X-Beacon-Key, X-App-Version`, `Access-Control-Max-Age: 600`, no credentials. Red-Nose is not a browser and needs none. |
+| CORS | The API answers CORS for the exact origins in `WMSFO_CORS_ORIGINS`: methods `GET, POST, PUT, PATCH, DELETE`, headers `Authorization, Content-Type, X-Beacon-Key, X-App-Version, If-None-Match`, exposed response header `ETag`, `Access-Control-Max-Age: 600`, no credentials. Red-Nose is not a browser and needs none. |
 | Client IP | Taken from `X-Forwarded-For` counting `WMSFO_TRUSTED_PROXY_HOPS` (default 2: the load balancer and the gateway proxy) entries from the right. Used for rate limiting and contact-message records only. |
 | `serverTime` | Every `2xx` response to a beacon endpoint carries `serverTime` (rfc3339), stamped when the response body is serialized, after any transaction has committed. Red-Nose uses it for clock skew (section 9). |
 | Rate limits | Token buckets, per node (not fleet-wide), keyed as shown. Over budget: `429` with `Retry-After` and `details.retryAfterSeconds`. The callback paths and `/api/health` are exempt. |
@@ -897,7 +897,7 @@ Capabilities, one per endpoint group of 4.5, each named after its heading: `even
 | `POST /subscriptions/verify`, `POST /subscriptions/unsubscribe` | client IP | 30/min | 30 |
 | `POST /cookies` | person id | 1/s | 3 |
 | `POST /me/subscriptions`, `.../resend-verification` | person id | 5/hour | 5 |
-| `GET /preview/document` | client IP | 60/min | 60 |
+| `GET /preview/document` | client IP | 240/min | 60 |
 | `POST /admin/media/upload-url` | person id | 30/min | 30 |
 | `/admin/*` | person id, or API key id | 20/s | 40 |
 
@@ -1076,7 +1076,7 @@ Rules: `name` 1 to 100, `email` a valid address 3 to 254, `message` 1 to 2000. S
 
 **`POST /subscriptions/unsubscribe`**. The token comes from either place: the query string `?token=wsu_...` or a JSON body `{ "token": "wsu_..." }`. The query form exists for RFC 8058: the `List-Unsubscribe` header names `https://<api-domain>/subscriptions/unsubscribe?token=wsu_...` and mail clients POST the form body `List-Unsubscribe=One-Click` to it; the API accepts `application/x-www-form-urlencoded` there and ignores the form body. The site page `/alerts/unsubscribe` reads `token` from its query string and sends the JSON form. Sets `unsubscribed_at`. `204`. Idempotent. Unknown token: `404 not_found`.
 
-**`GET /preview/document?token=wpv_...`**. The one public read, used only by the site's `/preview` route inside the admin panel's preview frame (4.5 Content). Answers `200 ContentBundle`: the working set as it would publish (hidden rows omitted), the media map for it, and the icon map, with `Cache-Control: no-store`. Unknown or expired token: `404 preview_token_invalid`. Rate limited per client IP (4.0).
+**`GET /preview/document?token=wpv_...`**. The one public read, used only by the site's `/preview` route inside the admin panel's preview frame (4.5 Content). Answers `200 ContentBundle`: the working set as it would publish (hidden rows omitted), the media map for it, and the icon map, with `Cache-Control: no-store` and a strong `ETag`: the quoted lowercase sha256 hex of the exact response body. A request whose `If-None-Match` carries that `ETag` answers `304 Not Modified` with the same `ETag` and no body, so a caller polling an unchanged draft downloads nothing; any draft change changes the body and so the `ETag`. Unknown or expired token: `404 preview_token_invalid`. Rate limited per client IP (4.0).
 
 **`POST /qr-codes/{tag}/scans`**. One printed-code visit (4.5a Public). Body `{ "referrer": "https://..." }`, optional. Always `204`. Sent by the site's `/q/:tag` route with `navigator.sendBeacon` before it navigates.
 
@@ -1251,7 +1251,7 @@ The six role pages are created by the seed (sql.md 6) with slugs `no-event`, `pl
 | `GET /admin/content/versions` | | `200 { "items": ContentVersionInfo[] }` newest first | |
 | `GET /admin/content/versions/{id}` | | `200 ContentVersionInfo & { "document": ContentDocument }` | `404` |
 | `POST /admin/content/versions/{id}/restore` | none | `200 ContentStatus`. Replaces the working set (pages, sections, items, site settings draft) with the version's document; rows get new ids; role pages keep their roles; a place or a printed code that opens a page keeps opening the restored page with the same slug (a slug the version does not have leaves the link null, as deleting the page would). Nothing is published. | `404` |
-| `POST /admin/content/preview-token` | none | `201 PreviewToken`: `token` is `wpv_` plus 43 base64url characters, hashed at rest, valid 15 minutes, reusable until expiry; `url` is `<site-base-url>/preview?token=<token>` | |
+| `POST /admin/content/preview-token` | optional `{ ttlMinutes?: integer }`, 15 to 1440, 15 when the body or the field is absent | `201 PreviewToken`: `token` is `wpv_` plus 43 base64url characters, hashed at rest, valid `ttlMinutes` minutes (`expiresAt`), reusable until expiry; `url` is `<site-base-url>/preview?token=<token>` | |
 
 Preview: the panel loads `url` plus `&page=<slug>` in an iframe; the site's `/preview` route fetches `GET /preview/document?token=` (4.3), substitutes the bundle for `snapshot.content`, `media`, and `icons`, and renders the named page (a role page by its slug, whatever the current status) with the real live object and snapshot for the live sections. Changing a section in the panel and reloading the frame shows the change; nothing is published.
 
