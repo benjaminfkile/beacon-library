@@ -355,6 +355,8 @@ type Presentation = {
   iconBefore: Icon | null;
   iconAfter: Icon | null;
   anchor: string | null;                                       // ^[a-z0-9]+(-[a-z0-9]+)*$, unique within a page
+  card?: boolean | null;                                       // absent or null means true: the section renders in a card; never applied to `map`
+  iconSize?: "sm" | "md" | "lg" | "xl" | null;                 // size of iconBefore and iconAfter; absent or null means "sm"
 };
 type Block =
   | { kind: "heading"; level: 1 | 2 | 3; text: Inline; icon: Icon | null }
@@ -367,6 +369,8 @@ type Block =
   | { kind: "divider"; style: "line" | "snowflakes" | "lights" };
 ```
 
+`card` and `iconSize` are optional: the API stores and publishes them only when set, and a reader treats an absent or null value as the default. The site never cards the `map` section whatever `card` says. The contract names the sizes; the pixel size of each one is the site's (site.md), not the contract's.
+
 **Inline markdown.** `**bold**`, `*italic*`, `\`code\``, `[label](href)` with the same href rules as `Link`, a line break as a newline character, an icon as `{icon:<library-id>}` or `{icon:media:<mediaId>}`, and the placeholders `{event:name}`, `{event:year}`, `{event:scheduledAt}` (filled from `snapshot.event`; blank when there is no current event; `scheduledAt` formatted by the site in `America/Denver`). Everything else is literal text. No raw HTML is stored or rendered; the site's inline parser produces React elements, never `innerHTML`.
 
 **Section kinds.** One schema per kind at `contracts/schema/sections/<kind>.schema.json` (data) and, for kinds with items, `<kind>.item.schema.json`. `live` kinds carry configuration and read the live object and the snapshot; `content` kinds carry everything they render.
@@ -374,7 +378,7 @@ type Block =
 | Kind | Live | `data` | Items | Rule |
 |---|---|---|---|---|
 | `rich_text` | no | `{ blocks: Block[] }` (1 to 200) | none | |
-| `hero` | no | `{ title: Inline; tagline: Inline \| null; icon: Icon \| null; links: Link[]; height: "short" \| "tall" }` (`links` 0 to 2) | none | the background image is `presentation.background` with `kind: "media"`, like any section |
+| `hero` | no | `{ title: Inline; tagline: Inline \| null; icon: Icon \| null; links: Link[]; height: "short" \| "tall"; iconSize?: "sm" \| "md" \| "lg" \| "xl" \| null }` (`links` 0 to 2; `iconSize` sizes `icon`, absent or null means `"sm"`) | none | the background image is `presentation.background` with `kind: "media"`, like any section |
 | `media` | no | `{ layout: "single" \| "grid" \| "carousel"; columns: 2 \| 3 \| 4 }` | `{ media: MediaRef; caption: Inline \| null; link: Link \| null }` (1 to 50) | |
 | `links` | no | `{ heading: Inline \| null; style: "buttons" \| "cards" \| "list" }` | `{ link: Link; description: Inline \| null }` (1 to 50) | |
 | `icon_row` | no | `{ size: "sm" \| "md" \| "lg"; spacing: "tight" \| "normal" \| "loose" }` | `{ icon: Icon; label: Inline \| null }` (1 to 30) | |
