@@ -380,7 +380,7 @@ type ContentSection = { id: number; kind: string; presentation: Presentation; da
 type ContentItem = { id: number; data: object };
 ```
 
-Pages appear in `navPosition` asc, `id` asc; sections in `position` asc, `id` asc; items likewise. Hidden pages, hidden sections, and hidden items are omitted at publish; the document carries only what renders. Exactly one page per non-`none` role is present (the seven are created by the seed and cannot be deleted, 4.5 Pages). A role page renders at `/` when its role matches `live.eventStatusId` (`no_event` when null); a `none` page renders at `/<slug>`. A role page's `navLabel` is always null; the home entry of the nav is site code, labelled by `settings.homeNavLabel`, linking to `/`. Every page entry carries `icon`, the page's own `Icon` (below) or null when it has none; any page, role pages included, can carry one, and the site shows it beside the page's entry in the corner panel. A media-sourced page icon rides in the snapshot's `media` like every other referenced asset.
+Pages appear in `navPosition` asc, `id` asc; sections in `position` asc, `id` asc; items likewise. Hidden pages, hidden sections, and hidden items are omitted at publish; the document carries only what renders. Exactly one page per non-`none` role is present (the seven are created by the seed; a role page is deleted only by handing its role to a `none` page, 4.5 Pages). A role page renders at `/` when its role matches `live.eventStatusId` (`no_event` when null); a `none` page renders at `/<slug>`. A role page's `navLabel` is always null; the home entry of the nav is site code, labelled by `settings.homeNavLabel`, linking to `/`. Every page entry carries `icon`, the page's own `Icon` (below) or null when it has none; any page, role pages included, can carry one, and the site shows it beside the page's entry in the corner panel. A media-sourced page icon rides in the snapshot's `media` like every other referenced asset.
 
 **Shared primitives**, defined once in `contracts/schema/primitives.schema.json` and referenced by every kind:
 
@@ -858,7 +858,7 @@ Two pools per environment. The people pool (`wmsfo-dev`, `wmsfo-prod`) carries t
 
 Token lifetimes: ID and access tokens 60 minutes; refresh token 30 days on `wmsfo-site`, 1 day on `wmsfo-admin`.
 
-Both pools' MFA setting is optional with TOTP enabled and SMS disabled. The admin pool's three groups: `admin` (name in `WMSFO_ADMIN_GROUP`, value `admin`), `editor` (name in `WMSFO_EDITOR_GROUP`, value `editor`), and `canvasser` (name in `WMSFO_CANVASSER_GROUP`, value `canvasser`: whoever posts stickers; it reaches only the QR codes and places routes of 4.5a and sees only those pages in the panel). Two authorization policies: `Editor` admits either group, `Admin` admits `admin` only, and both require the token to come from the admin pool; every `/admin/*` endpoint names one (4.5). The API enforces TOTP for both groups: on every `/admin/*` request it calls `AdminGetUser` on the admin pool for the token's `sub` (cached 5 minutes per user) and answers `403 mfa_required` unless `SOFTWARE_TOKEN_MFA` is enabled on the user. This needs `WMSFO_COGNITO_ADMIN_USER_POOL_ID` in the secret and `cognito-idp:AdminGetUser` on the admin pool for the instance role.
+Both pools' MFA setting is optional with TOTP enabled and SMS disabled. The admin pool's three groups: `admin` (name in `WMSFO_ADMIN_GROUP`, value `admin`), `editor` (name in `WMSFO_EDITOR_GROUP`, value `editor`), and `canvasser` (name in `WMSFO_CANVASSER_GROUP`, value `canvasser`: whoever posts stickers; it reaches only the QR codes and places routes of 4.5a and sees only those pages in the panel). Three authorization policies: `Editor` admits `admin` and `editor`, `Admin` admits `admin` only, and `Canvasser` admits `admin`, `editor`, and `canvasser` on the QR codes and places routes of 4.5a (`/admin/qr-codes*` and `/admin/places*`, except the two deletes, which are `Admin`); all three require the token to come from the admin pool; every `/admin/*` endpoint names one (4.5, 4.5a). The API enforces TOTP for both groups: on every `/admin/*` request it calls `AdminGetUser` on the admin pool for the token's `sub` (cached 5 minutes per user) and answers `403 mfa_required` unless `SOFTWARE_TOKEN_MFA` is enabled on the user. This needs `WMSFO_COGNITO_ADMIN_USER_POOL_ID` in the secret and `cognito-idp:AdminGetUser` on the admin pool for the instance role.
 
 **Token used on every surface: the ID token.** The site and the admin panel send `Authorization: Bearer <id-token>` to the API. The API validates:
 
@@ -950,7 +950,7 @@ An API key lets a script or an agent (Claude Code configuring the site, a postin
 | Acting as | Requests carry no `email`; audit columns record `key:<name>`. No `person` row is upserted. The TOTP gate does not apply to keys. |
 | Rate limit | The `/admin/*` bucket is keyed by key id instead of person id. |
 
-Capabilities, one per endpoint group of 4.5, each named after its heading (Posters rides `events`): `events`, `routes`, `beacons`, `sponsors`, `cookie_types`, `pages`, `sections`, `site_settings`, `content`, `media`, `icons`, `settings`, `contact_messages`, `subscribers`, `people`, `diagnostics`. Every `/admin/*` endpoint except the API-key endpoints names its capability in the endpoint metadata; a key request whose key lacks it is `403 forbidden`. A key with a capability reaches every endpoint in that group regardless of the group's Cognito policy (a key with `events` can change status; a key with `sponsors` can pin sponsors).
+Capabilities, one per endpoint group of 4.5, each named after its heading (Posters rides `events`): `events`, `routes`, `beacons`, `sponsors`, `cookie_types`, `pages`, `sections`, `site_settings`, `content`, `media`, `icons`, `settings`, `contact_messages`, `subscribers`, `people`, `diagnostics`, `audit`, `qr`. Every `/admin/*` endpoint except the API-key endpoints names its capability in the endpoint metadata; a key request whose key lacks it is `403 forbidden`. A key with a capability reaches every endpoint in that group regardless of the group's Cognito policy (a key with `events` can change status; a key with `sponsors` can pin sponsors).
 
 ### 3.5 Protecting the callback endpoints
 
@@ -1040,7 +1040,7 @@ type ApiKeyCapability = "events" | "routes" | "beacons" | "sponsors" | "cookie_t
 type ApiKey = { id: number; name: string; keyPrefix: string; allCapabilities: boolean; capabilities: ApiKeyCapability[]; expiresAt: string | null; createdBy: string; createdAt: string; lastUsedAt: string | null; revokedAt: string | null; audit: AuditStamp | null };
 type ApiKeyMinted = ApiKey & { key: string };   // the only response that ever carries the full key
 type CookieType = { id: number; name: string; icon: Icon | null; sort: number; active: boolean; cookieCount: number; createdAt: string; updatedAt: string; audit: AuditStamp | null };
-  // cookieCount: cookies of this type across every event; a type with a count above zero cannot be deleted (4.5 Cookie types)
+  // cookieCount: cookies of this type across every event; deleting the type deletes that many cookies (4.5 Cookie types)
 type Subscription = { id: number; channel: "email"; address: string; verifiedAt: string | null; unsubscribedAt: string | null; createdAt: string };
 type SubscriberAdmin = Subscription & { personId: number; personEmail: string; audit: AuditStamp | null };
 type Person = { id: number; email: string; createdAt: string; lastSeenAt: string; audit: AuditStamp | null };
@@ -1325,7 +1325,7 @@ An API key request on these three endpoints is `403 forbidden` whatever its capa
 | `PATCH /admin/cookie-types/{id}` **[snapshot]** | subset of `name`, `sort`, `active`, `icon` | `200 CookieType` | `404`, `409 event_live`, `409 media_not_ready`, `400` |
 | `DELETE /admin/cookie-types/{id}` **[snapshot]** | | `204`; its cookies are deleted with it (the tallies drop by their count; the impact says how many and warns while live) | `404`, `409 event_live` (cookie type writes are locked while an event is live) |
 
-Every write in this group returns `409 event_live` while any event has `status_id = 3`. A type is deleted only while no cookie references it; `active: false` removes a type from the snapshot without deleting it. Artwork is an icon: a library id or an uploaded SVG media asset.
+Every write in this group returns `409 event_live` while any event has `status_id = 3`. Deleting a type deletes its cookies with it (the event tallies drop by their count); `active: false` removes a type from the snapshot without deleting it. Artwork is an icon: a library id or any `ready` media asset.
 
 #### Pages (Editor)
 
@@ -1337,10 +1337,10 @@ Pages, sections, items, and the site settings draft are the working set. Writes 
 | `POST /admin/pages` | `{ "slug": "about", "title": "About", "navLabel": "About", "icon": { "source": "library", "id": "star" }, "navPosition": 10, "isHidden": false }` (`slug`, `title` required; `title` 1 to 200; `navLabel` null or 1 to 40; `icon` an `Icon` (1.3a) or null, absent means null; `navPosition` defaults to one past the greatest; role is always `none`) | `201 PageAdmin` | `400 slug_reserved`, `409 slug_taken`, `400 validation_failed` (`icon` not an `Icon`, on `icon`; a library id not in the library, on `icon.id`), `404` (media icon asset), `409 media_not_ready` |
 | `GET /admin/pages/{id}` | | `200 PageDetail` (sections with items in order, each with its publish-level `problems`) | `404` |
 | `PATCH /admin/pages/{id}` | subset of `slug`, `title`, `navLabel`, `icon` (an `Icon` sets it, `null` clears it, absent leaves it), `navPosition`, `isHidden` | `200 PageAdmin`. On a role page `navLabel` must stay null and `isHidden` false (`400`); role pages take icons like any page. | `404` (the page or a media icon asset), `400 slug_reserved`, `409 slug_taken`, `400 validation_failed` (`icon` not an `Icon`, on `icon`; a library id not in the library, on `icon.id`), `409 media_not_ready` |
-| `DELETE /admin/pages/{id}?roleTo=` | | `204`; cascades sections and items; a page holding a role hands it to the page named by `roleTo` first (the impact warns which role) | `404`, `400 role_needs_page` (the page holds a role and `roleTo` is missing or not another page) |
+| `DELETE /admin/pages/{id}?roleTo=` | | `204`; cascades sections and items; a role page is deleted only when `?roleTo=<page id>` names a page with role `none`, which takes the role in the same transaction (the impact warns which role); a `none` page ignores `roleTo` | `404` (the page, or the `roleTo` page), `400 validation_failed` (`roleTo` not an integer), `400 role_needs_page` (the page holds a role and `roleTo` is missing or names a page whose role is not `none`) |
 | `PUT /admin/pages/order` | `{ "ids": [3, 5, 4] }` (every `none` page exactly once) | `200 { "items": PageAdmin[] }`; `navPosition` becomes the index times 10 | `400` |
 
-The seven role pages are created by the seed (sql.md 6) with slugs `no-event`, `planned`, `scheduled`, `live`, `ended`, `cancelled`, `postponed`; their role never changes and they cannot be deleted. Reaching `/<slug>` of a role page on the site redirects to `/`.
+The seven role pages are created by the seed (sql.md 6) with slugs `no-event`, `planned`, `scheduled`, `live`, `ended`, `cancelled`, `postponed`; a role page's role moves only when the page is deleted with `roleTo`, so every role always has exactly one page. Reaching `/<slug>` of a role page on the site redirects to `/`.
 
 #### Sections and items (Editor)
 
@@ -1373,7 +1373,7 @@ The seven role pages are created by the seed (sql.md 6) with slugs `no-event`, `
 |---|---|---|---|
 | `GET /admin/content/status` | | `200 ContentStatus`: the newest version, the working set's hash, whether they differ, and every publish-level problem in the working set | |
 | `GET /admin/content/draft` | | `200 ContentBundle` for the working set (what a publish would produce); the media map holds the media the document references plus sponsor logos and cookie type media icons, as in `GET /preview/document` | |
-| `POST /admin/content/publish` **[snapshot]** | `{ "label": "December copy" }` (`label` null or 1 to 100) | `201 ContentVersionInfo`. Builds the document from the working set (hidden rows omitted, 1.3a order), validates at the publish level, inserts `content_version` with the referenced media ids, deletes versions beyond the newest 50, rebuilds the snapshot, commits, writes the live object. | `422 content_invalid` (`details.problems: ProblemRef[]`), `409 content_unchanged` (hash equals the newest version's), `502 snapshot_write_failed` |
+| `POST /admin/content/publish` **[snapshot]** | `{ "label": "December copy" }` (`label` null or 1 to 200 after trimming; blank is null) | `201 ContentVersionInfo`. Builds the document from the working set (hidden rows omitted, 1.3a order), validates at the publish level, inserts `content_version` with the referenced media ids, deletes versions beyond the newest 50, rebuilds the snapshot, commits, writes the live object. | `422 content_invalid` (`details.problems: ProblemRef[]`), `409 content_unchanged` (hash equals the newest version's), `502 snapshot_write_failed` |
 | `GET /admin/content/versions` | | `200 { "items": ContentVersionInfo[] }` newest first | |
 | `GET /admin/content/versions/{id}` | | `200 ContentVersionInfo & { "document": ContentDocument }` | `404` |
 | `POST /admin/content/versions/{id}/restore` | none | `200 ContentStatus`. Replaces the working set (pages, sections, items, site settings draft) with the version's document; rows get new ids; role pages keep their roles; a place or a printed code that opens a page keeps opening the restored page with the same slug (a slug the version does not have leaves the link null, as deleting the page would). Nothing is published. | `404` |
@@ -1471,7 +1471,7 @@ Printed stickers and the places they hang in (site.md 4 for the public route, ad
 | `PATCH /admin/places/{id}` **[snapshot]** | any of `parentId` (null for the root), `name`, `description`, `opensPageId`, `forwardUrl` | `200 Place` | `404`, `400 place_cycle` (a place cannot move under itself or its descendants), `409 place_name_taken` |
 | `PUT /admin/places/{id}/location` | `{ "lat": 46.916, "lng": -114.039, "accuracyM": 140, "source": "phone" }` (`source` one of `phone`, `search`, `drag`; `accuracyM` null unless `phone`) | `200 Place` | `404`, `400 validation_failed` |
 | `DELETE /admin/places/{id}/location` | | `200 Place` (no pin; the parent's applies) | `404` |
-| `DELETE /admin/places/{id}` **[snapshot]**, admin only | | `204`: the place and everything under it; open attachments in the subtree close (their codes become unattached), every stay keeps its history row with `placeId` null | `404` |
+| `DELETE /admin/places/{id}` **[snapshot]**, admin only | | `204`: cascades, deleting the place and every place under it as the impact preview lists; open attachments in the subtree close (their codes become unattached), every stay keeps its history row with `placeId` null | `404` |
 | `GET /admin/places/map?eventId=&from=&to=` | | `200 { "items": PlacePin[] }`: one entry per pinned place with the people count under it (the subtree's scans in the window, attributed by the scan's event when `eventId` is given), plus `unpinned` (places with scans and no resolved pin) and `unattached` (scans on codes with no attachment) counts | `400 validation_failed` |
 
 Not snapshot-affecting: the location PUT and DELETE (pins never reach the site) and everything under `/qr-codes/{tag}/scans`.
@@ -1534,7 +1534,6 @@ Actions are `create`, `update`, `delete` for the generic writes and the endpoint
 | `year_taken` | 409 | event create, patch, and clone |
 | `place_cycle` | 400 | `PATCH /admin/places/{id}` moving a place under itself |
 | `place_name_taken` | 409 | place create and patch (unique among siblings) |
-| `place_has_children`, `place_has_codes` | 409 | `DELETE /admin/places/{id}` |
 | `year_exists` | 409 | `POST /admin/sponsors/{id}/years/{eventYear}/copy-from/{sourceYear}` when the sponsor already has `eventYear` |
 | `pinned_position_taken` | 409 | `PUT /admin/sponsors/{id}/years/{eventYear}` |
 | `name_taken` | 409 | `POST /admin/api-keys` |
@@ -1542,7 +1541,7 @@ Actions are `create`, `update`, `delete` for the generic writes and the endpoint
 | `slug_reserved` | 400 | page create and patch |
 | `unknown_kind` | 400 | section create |
 | `slug_taken` | 409 | page create and patch |
-| `page_has_role` | 409 | `DELETE /admin/pages/{id}` on a role page |
+| `role_needs_page` | 400 | `DELETE /admin/pages/{id}` on a role page without `roleTo`, or with a `roleTo` page whose role is not `none` |
 | `kind_not_allowed` | 409 | section create and move onto a page whose role the kind excludes |
 | `content_unchanged` | 409 | `POST /admin/content/publish` |
 | `content_invalid` | 422 | `POST /admin/content/publish`; `details.problems` |
@@ -2540,7 +2539,7 @@ Tests the artifacts drive: Vitest on the site store, page selection, section reg
 - Heartbeats are HTTP only; the hub carries locations only. The heartbeat answer carries `liveEventId` and `isActive`; a heartbeat `401` shows a revoked banner on the phone without stopping any loop. Send failures before the phone has learned a live event do not count in `sendsFailedSinceBoot`.
 - Beacons have no roles: registering a beacon is registering a key, and the API never knows what runs behind it. A heartbeat is `sentAt`, an optional typed `health` core (battery, fix age, socket state) the panel colours, and an optional free `debug` object the panel renders as a JSON tree and never interprets. `POST /beacons/logs` is open to every beacon.
 - An event goes live only with a healthy active beacon (not revoked, heard from within `beacon_stale_after_s`); the socket is not part of health. `409 no_healthy_beacon` otherwise.
-- Cookie moderation does not exist: no hide, unhide, delete, or per-event cookie list on the API or the panel; the tally is every cookie left. A cookie type can be deleted while no cookie references it (`409 cookie_type_in_use` otherwise).
+- Cookie moderation does not exist: no hide, unhide, delete, or per-event cookie list on the API or the panel; the tally is every cookie left. Deleting a cookie type deletes its cookies with it.
 - Large rasters get a Deep Zoom tile pyramid at confirm, served immutable from the CDN beside the asset; a deep-zoom viewer is OpenSeadragon over it with fullscreen, and a new image is a new asset, so nothing is ever stale.
 - The public site owns its sign-up and sign-in pages and speaks to the people pool through the Cognito API (SRP); only the admin panel uses a Cognito-hosted page.
 - Two more beacons are fleet services: the simulator (replays a past year through the events capability of an API key) and the legacy beacon (polls the Heroku tracker every second); both are ordinary enrolled beacons.
@@ -2586,7 +2585,7 @@ Tests the artifacts drive: Vitest on the site store, page selection, section reg
 - One page per event status, plus a no-event page, all admin-composed; the site holds kinds, never screens.
 - The content document is the newest `content_version.document` verbatim; identical content publishes to the same snapshot key; `content_unchanged` refuses a no-op publish.
 - Working-set writes are draft-validated and never rebuild the snapshot; publish is the only path to the site and is strict.
-- The seven role pages are seeded, undeletable, and role-immutable; ordinary pages are free; slugs are one segment with five reserved names.
+- The seven role pages are seeded; a role page is deleted only by handing its role to a `none` page (`roleTo`), so every role keeps one page; ordinary pages are free; slugs are one segment with five reserved names.
 - Presentation, `Icon`, `MediaRef`, `Link`, `Inline`, and `Block` are the only shared vocabulary; kinds never define their own shapes for them.
 - Media uploads are presigned PUTs to a private bucket with a pending tag; confirm verifies, derives 480, 960, and 1600 WebP variants, and strips the tag; lifecycle rules expire pending and orphaned objects; orphan collection is a leader chore with a 30-day grace and a 7-day undo.
 - Sponsor logos and cookie type artwork are references into the media library and the icon library; there are no per-resource upload endpoints.
