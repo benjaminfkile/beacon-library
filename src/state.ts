@@ -18,6 +18,7 @@ export interface LastHeartbeat {
   receivedAt: string;
   liveEventId: number | null;
   isActive: boolean | null;
+  stateVersion: number | null;
 }
 
 export interface BeaconState {

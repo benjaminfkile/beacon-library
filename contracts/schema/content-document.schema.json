@@ -26,8 +26,9 @@
               { "type": "null" }
             ]
           },
+          "icon": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/IconNullable" },
           "navPosition": { "type": "integer" },
-          "role": { "enum": ["none", "no_event", "planned", "scheduled", "live", "ended", "cancelled"] },
+          "role": { "enum": ["none", "no_event", "planned", "scheduled", "live", "ended", "cancelled", "postponed"] },
           "sections": {
             "type": "array",
             "items": {
@@ -55,7 +56,7 @@
             }
           }
         },
-        "required": ["id", "slug", "title", "navLabel", "navPosition", "role", "sections"],
+        "required": ["id", "slug", "title", "navLabel", "icon", "navPosition", "role", "sections"],
         "additionalProperties": false
       }
     }

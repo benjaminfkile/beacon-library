@@ -5,14 +5,6 @@
   "description": "Full-viewport live map (contracts 1.3a). Allowed only on the page with role `live` (reference-checker rule).",
   "type": "object",
   "properties": {
-    "themes": {
-      "type": "array",
-      "items": { "enum": ["standard", "expedition", "blizzard", "charcoal", "night", "nebula"] },
-      "minItems": 1,
-      "maxItems": 10,
-      "uniqueItems": true
-    },
-    "defaultTheme": { "enum": ["standard", "expedition", "blizzard", "charcoal", "night", "nebula"] },
     "defaultCenter": {
       "type": "object",
       "properties": {
@@ -32,7 +24,8 @@
         "flightHistory": { "type": "boolean" },
         "timeLabels": { "type": "boolean" },
         "location": { "type": "boolean" },
-        "dataRow": { "type": "boolean" }
+        "dataRow": { "type": "boolean" },
+        "landmarks": { "type": "boolean" }
       },
       "required": ["themePicker", "terrain", "snow", "flightHistory", "timeLabels", "location", "dataRow"],
       "additionalProperties": false
@@ -47,12 +40,13 @@
         "leaderboardPanel": { "type": "boolean" },
         "sponsorCarousel": { "type": "boolean" },
         "cookieControl": { "type": "boolean" },
-        "distanceChip": { "type": "boolean" }
+        "distanceChip": { "type": "boolean" },
+        "onlineCount": { "type": "boolean" }
       },
       "required": ["liveIndicator", "liftoffTimer", "latestMessage", "leaderboardPanel", "sponsorCarousel", "cookieControl", "distanceChip"],
       "additionalProperties": false
     }
   },
-  "required": ["themes", "defaultTheme", "defaultCenter", "defaultZoom", "controls", "flightHistoryDefault", "overlays"],
+  "required": ["defaultCenter", "defaultZoom", "controls", "flightHistoryDefault", "overlays"],
   "additionalProperties": false
 }

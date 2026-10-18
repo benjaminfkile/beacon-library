@@ -302,7 +302,7 @@ describe("createBeacon", () => {
     await flush();
     const hub = ctx.hubs[0]!;
     expect(b.state.socketState).toBe("connected");
-    b.state.lastHeartbeat = { receivedAt: "", liveEventId: 7, isActive: true };
+    b.state.lastHeartbeat = { receivedAt: "", liveEventId: 7, isActive: true, stateVersion: null };
 
     for (let i = 0; i < 3; i++) {
       setLatestFix(b.state, FIX);

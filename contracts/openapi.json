@@ -159,6 +159,52 @@
         }
       }
     },
+    "/beacons/me/state": {
+      "get": {
+        "tags": [
+          "Beacon"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BeaconStateResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Beacon"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BeaconStateBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BeaconStateWriteResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/contact": {
       "post": {
         "tags": [
@@ -254,6 +300,9 @@
                 }
               }
             }
+          },
+          "304": {
+            "description": "Not Modified"
           }
         }
       }
@@ -523,8 +572,44 @@
         }
       }
     },
+    "/admin/events/{id}/route-map": {
+      "get": {
+        "tags": [
+          "AdminEvents"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RouteMapResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/admin/events/{id}/current": {
       "post": {
+        "tags": [
+          "AdminEvents"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
         "tags": [
           "AdminEvents"
         ],
@@ -733,6 +818,35 @@
         }
       }
     },
+    "/admin/events/{id}/cookies": {
+      "post": {
+        "tags": [
+          "AdminEvents"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SeedCookiesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeedCookiesResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/admin/events/{id}/locations": {
       "get": {
         "tags": [
@@ -852,6 +966,25 @@
         "responses": {
           "204": {
             "description": "No Content"
+          }
+        }
+      }
+    },
+    "/admin/routes/{id}/route-map": {
+      "get": {
+        "tags": [
+          "AdminRoutes"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RouteMapResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -1978,6 +2111,15 @@
         "tags": [
           "AdminContent"
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreviewTokenRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": "Created",
@@ -3062,6 +3204,614 @@
         }
       }
     },
+    "/admin/posters/{id}/impact": {
+      "get": {
+        "tags": [
+          "AdminImpact"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteImpactDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/themes/{id}/impact": {
+      "get": {
+        "tags": [
+          "AdminImpact"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteImpactDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/maps/{id}/impact": {
+      "get": {
+        "tags": [
+          "AdminImpact"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteImpactDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/posters": {
+      "get": {
+        "tags": [
+          "AdminPosters"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemsResponseOfPosterSummaryDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "AdminPosters"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePosterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PosterDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/posters/{id}": {
+      "get": {
+        "tags": [
+          "AdminPosters"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PosterDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "AdminPosters"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchPosterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PosterDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "AdminPosters"
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/admin/help": {
+      "get": {
+        "tags": [
+          "AdminHelp"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemsResponseOfHelpTopicDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/help/{key}": {
+      "put": {
+        "tags": [
+          "AdminHelp"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PutHelpTopicRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HelpTopicDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/help/{key}/reset": {
+      "post": {
+        "tags": [
+          "AdminHelp"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HelpTopicDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/themes": {
+      "get": {
+        "tags": [
+          "AdminThemes"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemsResponseOfTrackerThemeDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "AdminThemes"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTrackerThemeRequest"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTrackerThemeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackerThemeDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/themes/{id}": {
+      "patch": {
+        "tags": [
+          "AdminThemes"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchTrackerThemeRequest"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchTrackerThemeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackerThemeDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "AdminThemes"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteTrackerThemeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/admin/themes/{id}/sprite": {
+      "post": {
+        "tags": [
+          "AdminThemes"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SpriteTicketsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpriteTicketsDto"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpriteTicketsDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/themes/{id}/sprite/confirm": {
+      "post": {
+        "tags": [
+          "AdminThemes"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SpriteConfirmRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackerThemeDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/themes/{id}/default": {
+      "post": {
+        "tags": [
+          "AdminThemes"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetThemeDefaultRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackerThemeDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/maps": {
+      "get": {
+        "tags": [
+          "AdminMaps"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemsResponseOfTrackerMapDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "AdminMaps"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTrackerMapRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackerMapUploadDto"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackerMapUploadDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/maps/{id}/parts": {
+      "post": {
+        "tags": [
+          "AdminMaps"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrackerMapPartsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackerMapPartsDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/maps/{id}/complete": {
+      "post": {
+        "tags": [
+          "AdminMaps"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrackerMapCompleteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackerMapDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/maps/{id}/confirm": {
+      "post": {
+        "tags": [
+          "AdminMaps"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackerMapDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/maps/{id}": {
+      "patch": {
+        "tags": [
+          "AdminMaps"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchTrackerMapRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackerMapDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "AdminMaps"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteTrackerMapRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
     "/admin/snapshot": {
       "get": {
         "tags": [
@@ -3273,6 +4023,12 @@
           },
           "subject": {
             "type": "string"
+          },
+          "message": {
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "sentAt": {
             "type": "string",
@@ -3495,6 +4251,43 @@
           "at": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "Bbox": {
+        "type": "object",
+        "properties": {
+          "west": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "south": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "east": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "north": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
           }
         }
       },
@@ -3729,6 +4522,14 @@
             ],
             "format": "int64"
           },
+          "stateVersion": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
           "serverTime": {
             "type": "string",
             "format": "date-time"
@@ -3751,6 +4552,78 @@
               "string"
             ],
             "format": "int32"
+          }
+        }
+      },
+      "BeaconStateBody": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "$ref": "#/components/schemas/JsonElement"
+          },
+          "expectedVersion": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          }
+        },
+        "additionalProperties": false
+      },
+      "BeaconStateResponse": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/JsonElement"
+              }
+            ]
+          },
+          "stateVersion": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "updatedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "serverTime": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "BeaconStateWriteResponse": {
+        "type": "object",
+        "properties": {
+          "stateVersion": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "serverTime": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -3790,6 +4663,32 @@
           }
         }
       },
+      "Chrome": {
+        "type": "object",
+        "properties": {
+          "bg": {
+            "type": "string"
+          },
+          "fg": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "tile": {
+            "type": "string"
+          },
+          "tileFg": {
+            "type": "string"
+          },
+          "panel": {
+            "type": "string"
+          },
+          "accent": {
+            "type": "string"
+          }
+        }
+      },
       "CloneEventCopy": {
         "type": "object",
         "properties": {
@@ -3799,7 +4698,10 @@
           "route": {
             "type": "boolean"
           },
-          "poster": {
+          "routeMapConfig": {
+            "type": "boolean"
+          },
+          "tracker": {
             "type": "boolean"
           }
         }
@@ -4297,17 +5199,11 @@
           "body": {
             "type": "string"
           },
-          "eventTime": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
-          },
           "notify": {
             "type": "boolean"
           }
-        }
+        },
+        "additionalProperties": false
       },
       "CreateEventRequest": {
         "type": "object",
@@ -4349,6 +5245,15 @@
           },
           "inheritRoute": {
             "type": "boolean"
+          },
+          "scheduleTimeZone": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "trackerBbox": {
+            "$ref": "#/components/schemas/JsonElement"
           }
         }
       },
@@ -4366,6 +5271,9 @@
               "null",
               "string"
             ]
+          },
+          "icon": {
+            "$ref": "#/components/schemas/JsonElement"
           },
           "navPosition": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -4414,6 +5322,21 @@
             ]
           }
         }
+      },
+      "CreatePosterRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "routeId": {
+            "$ref": "#/components/schemas/JsonElement"
+          },
+          "layout": {
+            "$ref": "#/components/schemas/JsonElement"
+          }
+        },
+        "additionalProperties": false
       },
       "CreateSectionItemRequest": {
         "type": "object",
@@ -4537,6 +5460,85 @@
           }
         }
       },
+      "CreateTrackerMapRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "bbox": {
+            "$ref": "#/components/schemas/Bbox"
+          },
+          "minZoom": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "maxZoom": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "terrainMaxZoom": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "sourceBuild": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateTrackerThemeRequest": {
+        "type": "object",
+        "properties": {
+          "renderer": {
+            "type": "string"
+          },
+          "key": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "sortOrder": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "style": {
+            "$ref": "#/components/schemas/JsonElement"
+          },
+          "chrome": {
+            "$ref": "#/components/schemas/JsonElement"
+          },
+          "overlay": {
+            "$ref": "#/components/schemas/JsonElement"
+          },
+          "thumbnailMediaId": {
+            "$ref": "#/components/schemas/JsonElement"
+          }
+        },
+        "additionalProperties": false
+      },
       "DeleteImpactDto": {
         "type": "object",
         "properties": {
@@ -4565,6 +5567,36 @@
             }
           }
         }
+      },
+      "DeleteTrackerMapRequest": {
+        "type": "object",
+        "properties": {
+          "replacementId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DeleteTrackerThemeRequest": {
+        "type": "object",
+        "properties": {
+          "replacementId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          }
+        },
+        "additionalProperties": false
       },
       "EmailQuota": {
         "type": "object",
@@ -4734,6 +5766,12 @@
             ],
             "format": "date-time"
           },
+          "scheduleTimeZone": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "wentLiveAt": {
             "type": [
               "null",
@@ -4778,21 +5816,38 @@
               "string"
             ]
           },
-          "routeImageMediaId": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "routeImage": {
+          "routeMapConfig": {
             "oneOf": [
               {
                 "type": "null"
               },
               {
-                "$ref": "#/components/schemas/MediaAssetDto"
+                "$ref": "#/components/schemas/RouteMapConfig"
               }
             ]
+          },
+          "trackerBbox": {
+            "$ref": "#/components/schemas/Bbox"
+          },
+          "trackerMapId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "trackerThemeIds": {
+            "type": "array",
+            "items": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int64"
+            }
           },
           "createdBy": {
             "type": "string"
@@ -4839,13 +5894,6 @@
           "body": {
             "type": "string"
           },
-          "eventTime": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
-          },
           "createdBy": {
             "type": "string"
           },
@@ -4856,6 +5904,17 @@
           "updatedAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "notify": {
+            "type": "boolean"
+          },
+          "sentCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           },
           "audit": {
             "oneOf": [
@@ -4956,9 +6015,87 @@
           "isActive": {
             "type": "boolean"
           },
+          "stateVersion": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
           "serverTime": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "HelpLinkDto": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          }
+        }
+      },
+      "HelpTopicDto": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "page": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HelpLinkDto"
+            }
+          },
+          "edited": {
+            "type": "boolean"
+          },
+          "editedBy": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "editedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "defaultChanged": {
+            "type": "boolean"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "audit": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AuditStampDto"
+              }
+            ]
           }
         }
       },
@@ -4990,6 +6127,16 @@
           },
           "id": {
             "type": "string"
+          },
+          "display": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/JsonElement"
+              }
+            ]
           }
         }
       },
@@ -5108,6 +6255,17 @@
           }
         }
       },
+      "ItemsResponseOfHelpTopicDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HelpTopicDto"
+            }
+          }
+        }
+      },
       "ItemsResponseOfIconInfoDto": {
         "type": "object",
         "properties": {
@@ -5148,6 +6306,17 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/PlaceDto"
+            }
+          }
+        }
+      },
+      "ItemsResponseOfPosterSummaryDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PosterSummaryDto"
             }
           }
         }
@@ -5236,6 +6405,28 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/SubscriptionDto"
+            }
+          }
+        }
+      },
+      "ItemsResponseOfTrackerMapDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TrackerMapDto"
+            }
+          }
+        }
+      },
+      "ItemsResponseOfTrackerThemeDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TrackerThemeDto"
             }
           }
         }
@@ -5430,6 +6621,15 @@
           "publishedAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "onlineCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           }
         }
       },
@@ -5683,6 +6883,27 @@
               "string"
             ]
           },
+          "darkMediaId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "invertInDark": {
+            "type": "boolean"
+          },
+          "smallMediaId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "credit": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "uploadedBy": {
             "type": "string"
           },
@@ -5720,6 +6941,20 @@
                 "$ref": "#/components/schemas/AuditStampDto"
               }
             ]
+          }
+        }
+      },
+      "MediaDarkEntry": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "variants": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
           }
         }
       },
@@ -5764,6 +6999,41 @@
               "null",
               "string"
             ]
+          },
+          "dark": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MediaDarkEntry"
+              }
+            ]
+          },
+          "invertInDark": {
+            "type": "boolean"
+          },
+          "small": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MediaSmallEntry"
+              }
+            ]
+          },
+          "smallMediaId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "credit": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -5781,6 +7051,59 @@
               "null",
               "string"
             ]
+          },
+          "darkMediaId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "invertInDark": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "smallMediaId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "credit": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "MediaSmallEntry": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "variants": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "dark": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MediaDarkEntry"
+              }
+            ]
+          },
+          "invertInDark": {
+            "type": "boolean"
           }
         }
       },
@@ -5854,8 +7177,31 @@
               "$ref": "#/components/schemas/MediaUsageCookieTypeRef"
             }
           },
+          "themes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MediaUsageThemeRef"
+            }
+          },
           "siteSettings": {
             "type": "boolean"
+          },
+          "darkVersionOf": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MediaUsageMediaRef"
+            }
+          }
+        }
+      },
+      "MediaUsageMediaRef": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "filename": {
+            "type": "string"
           }
         }
       },
@@ -5879,6 +7225,22 @@
         }
       },
       "MediaUsageSponsorRef": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "MediaUsageThemeRef": {
         "type": "object",
         "properties": {
           "id": {
@@ -6188,6 +7550,42 @@
           }
         }
       },
+      "Overlay": {
+        "type": "object",
+        "properties": {
+          "routeColor": {
+            "type": "string"
+          },
+          "routeOpacity": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "arrowColor": {
+            "type": "string"
+          },
+          "timeLabelBg": {
+            "type": "string"
+          },
+          "timeLabelFg": {
+            "type": "string"
+          },
+          "timeLabelOpacity": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "userColor": {
+            "type": "string"
+          }
+        }
+      },
       "PageAdminDto": {
         "type": "object",
         "properties": {
@@ -6209,6 +7607,16 @@
             "type": [
               "null",
               "string"
+            ]
+          },
+          "icon": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/IconValue"
+              }
             ]
           },
           "navPosition": {
@@ -6288,6 +7696,16 @@
             "type": [
               "null",
               "string"
+            ]
+          },
+          "icon": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/IconValue"
+              }
             ]
           },
           "navPosition": {
@@ -6530,15 +7948,9 @@
               "null",
               "string"
             ]
-          },
-          "eventTime": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
           }
-        }
+        },
+        "additionalProperties": false
       },
       "PatchEventRequest": {
         "type": "object",
@@ -6559,25 +7971,13 @@
             "format": "int32"
           },
           "scheduledAt": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
+            "$ref": "#/components/schemas/JsonElement"
           },
           "wentLiveAt": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
+            "$ref": "#/components/schemas/JsonElement"
           },
           "endedAt": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
+            "$ref": "#/components/schemas/JsonElement"
           },
           "fundsPercent": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -6597,13 +7997,23 @@
             ],
             "format": "int64"
           },
-          "routeImageMediaId": {
-            "type": [
-              "null",
-              "string"
-            ]
+          "scheduleTimeZone": {
+            "$ref": "#/components/schemas/JsonElement"
+          },
+          "routeMapConfig": {
+            "$ref": "#/components/schemas/JsonElement"
+          },
+          "trackerBbox": {
+            "$ref": "#/components/schemas/JsonElement"
+          },
+          "trackerMapId": {
+            "$ref": "#/components/schemas/JsonElement"
+          },
+          "trackerThemeIds": {
+            "$ref": "#/components/schemas/JsonElement"
           }
-        }
+        },
+        "additionalProperties": false
       },
       "PatchPageRequest": {
         "type": "object",
@@ -6625,6 +8035,9 @@
               "null",
               "string"
             ]
+          },
+          "icon": {
+            "$ref": "#/components/schemas/JsonElement"
           },
           "navPosition": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -6692,6 +8105,24 @@
             "type": "boolean"
           }
         }
+      },
+      "PatchPosterRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "routeId": {
+            "$ref": "#/components/schemas/JsonElement"
+          },
+          "layout": {
+            "$ref": "#/components/schemas/JsonElement"
+          }
+        },
+        "additionalProperties": false
       },
       "PatchQrCodeRequest": {
         "type": "object",
@@ -6841,6 +8272,54 @@
             ]
           }
         }
+      },
+      "PatchTrackerMapRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PatchTrackerThemeRequest": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "sortOrder": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "style": {
+            "$ref": "#/components/schemas/JsonElement"
+          },
+          "chrome": {
+            "$ref": "#/components/schemas/JsonElement"
+          },
+          "overlay": {
+            "$ref": "#/components/schemas/JsonElement"
+          },
+          "thumbnailMediaId": {
+            "$ref": "#/components/schemas/JsonElement"
+          }
+        },
+        "additionalProperties": false
       },
       "PersonDto": {
         "type": "object",
@@ -7219,6 +8698,91 @@
           }
         }
       },
+      "PosterDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "name": {
+            "type": "string"
+          },
+          "routeId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "layout": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/JsonElement"
+              }
+            ]
+          },
+          "createdBy": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "audit": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AuditStampDto"
+              }
+            ]
+          }
+        }
+      },
+      "PosterSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "name": {
+            "type": "string"
+          },
+          "routeId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "PresentationDto": {
         "type": "object",
         "properties": {
@@ -7259,6 +8823,36 @@
               "null",
               "string"
             ]
+          },
+          "card": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "iconSize": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "cardOpacityLight": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "cardOpacityDark": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           }
         }
       },
@@ -7284,6 +8878,20 @@
                 "$ref": "#/components/schemas/AuditStampDto"
               }
             ]
+          }
+        }
+      },
+      "PreviewTokenRequest": {
+        "type": "object",
+        "properties": {
+          "ttlMinutes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           }
         }
       },
@@ -7346,6 +8954,51 @@
             ]
           }
         }
+      },
+      "PutHelpLinkRequest": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "to": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "PutHelpTopicRequest": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "body": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "links": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/PutHelpLinkRequest"
+            }
+          }
+        },
+        "additionalProperties": false
       },
       "PutPlaceLocationRequest": {
         "type": "object",
@@ -7823,6 +9476,179 @@
           }
         }
       },
+      "RouteMap": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RouteMapPoint"
+            }
+          },
+          "timeline": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RouteMapTimelineEntry"
+            }
+          },
+          "durationMinutes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "timed": {
+            "type": "boolean"
+          }
+        }
+      },
+      "RouteMapConfig": {
+        "type": "object",
+        "properties": {
+          "display": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RouteMapDisplay"
+              }
+            ]
+          },
+          "controls": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RouteMapControls"
+              }
+            ]
+          }
+        }
+      },
+      "RouteMapControls": {
+        "type": "object",
+        "properties": {
+          "fullscreen": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "terrain": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          }
+        }
+      },
+      "RouteMapDisplay": {
+        "type": "object",
+        "properties": {
+          "timeLabelIntervalMinutes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "arrows": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "arrowSize": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "routeWidth": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "labelSize": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "RouteMapPoint": {
+        "type": "object",
+        "properties": {
+          "lat": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "lng": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "RouteMapResponse": {
+        "type": "object",
+        "properties": {
+          "routeMap": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RouteMap"
+              }
+            ]
+          }
+        }
+      },
+      "RouteMapTimelineEntry": {
+        "type": "object",
+        "properties": {
+          "minutes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "lat": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "lng": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
       "RouteUploadPoint": {
         "type": "object",
         "properties": {
@@ -7994,6 +9820,67 @@
             }
           }
         }
+      },
+      "SeedCookiesRequest": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CookiePick"
+            }
+          }
+        }
+      },
+      "SeedCookiesResponse": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "seeded": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "cookieTally": {
+            "type": "object",
+            "additionalProperties": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        }
+      },
+      "SetThemeDefaultRequest": {
+        "type": "object",
+        "properties": {
+          "light": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "dark": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          }
+        },
+        "additionalProperties": false
       },
       "SettingDto": {
         "type": "object",
@@ -8365,6 +10252,62 @@
           }
         }
       },
+      "SpriteConfirmRequest": {
+        "type": "object",
+        "properties": {
+          "indexSha256": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SpriteTicketsDto": {
+        "type": "object",
+        "properties": {
+          "indexSha256": {
+            "type": "string"
+          },
+          "uploads": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SpriteUploadDto"
+            }
+          }
+        }
+      },
+      "SpriteTicketsRequest": {
+        "type": "object",
+        "properties": {
+          "indexSha256": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SpriteUploadDto": {
+        "type": "object",
+        "properties": {
+          "file": {
+            "type": "string"
+          },
+          "uploadUrl": {
+            "type": "string"
+          },
+          "method": {
+            "type": "string"
+          },
+          "headers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "StatusHistoryDto": {
         "type": "object",
         "properties": {
@@ -8416,6 +10359,15 @@
               "null",
               "string"
             ]
+          },
+          "messageId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int64"
           },
           "sentCount": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -8576,6 +10528,368 @@
           }
         }
       },
+      "TrackerMapCompletePartDto": {
+        "type": "object",
+        "properties": {
+          "partNumber": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "etag": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "TrackerMapCompleteRequest": {
+        "type": "object",
+        "properties": {
+          "file": {
+            "type": "string"
+          },
+          "parts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TrackerMapCompletePartDto"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "TrackerMapDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "name": {
+            "type": "string"
+          },
+          "packageKey": {
+            "type": "string"
+          },
+          "prefix": {
+            "type": "string"
+          },
+          "bbox": {
+            "$ref": "#/components/schemas/Bbox"
+          },
+          "minZoom": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "maxZoom": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "terrainMaxZoom": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "tilesBytes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "terrainBytes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "sourceBuild": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "state": {
+            "type": "string"
+          },
+          "builtAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "tilesUrl": {
+            "type": "string"
+          },
+          "terrainUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "eventCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "createdBy": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedBy": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "audit": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AuditStampDto"
+              }
+            ]
+          }
+        }
+      },
+      "TrackerMapPartsDto": {
+        "type": "object",
+        "properties": {
+          "file": {
+            "type": "string"
+          },
+          "parts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TrackerMapPartUrlDto"
+            }
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "TrackerMapPartsRequest": {
+        "type": "object",
+        "properties": {
+          "file": {
+            "type": "string"
+          },
+          "partNumbers": {
+            "type": "array",
+            "items": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "TrackerMapPartUrlDto": {
+        "type": "object",
+        "properties": {
+          "partNumber": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      },
+      "TrackerMapUploadDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "packageKey": {
+            "type": "string"
+          },
+          "uploads": {
+            "$ref": "#/components/schemas/TrackerMapUploadsDto"
+          }
+        }
+      },
+      "TrackerMapUploadIdDto": {
+        "type": "object",
+        "properties": {
+          "uploadId": {
+            "type": "string"
+          }
+        }
+      },
+      "TrackerMapUploadsDto": {
+        "type": "object",
+        "properties": {
+          "tiles": {
+            "$ref": "#/components/schemas/TrackerMapUploadIdDto"
+          },
+          "terrain": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TrackerMapUploadIdDto"
+              }
+            ]
+          }
+        }
+      },
+      "TrackerThemeDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "renderer": {
+            "type": "string"
+          },
+          "key": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "sortOrder": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "styleUrl": {
+            "type": "string"
+          },
+          "styleSha256": {
+            "type": "string"
+          },
+          "styleBytes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "spriteSha256": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "spriteUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "chrome": {
+            "$ref": "#/components/schemas/Chrome"
+          },
+          "overlay": {
+            "$ref": "#/components/schemas/Overlay"
+          },
+          "thumbnailMediaId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "defaultLightMode": {
+            "type": "boolean"
+          },
+          "defaultDarkMode": {
+            "type": "boolean"
+          },
+          "eventCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "createdBy": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedBy": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "audit": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AuditStampDto"
+              }
+            ]
+          }
+        }
+      },
       "UploadRouteRequest": {
         "type": "object",
         "properties": {
@@ -8720,6 +11034,18 @@
     },
     {
       "name": "AdminImpact"
+    },
+    {
+      "name": "AdminPosters"
+    },
+    {
+      "name": "AdminHelp"
+    },
+    {
+      "name": "AdminThemes"
+    },
+    {
+      "name": "AdminMaps"
     },
     {
       "name": "AdminDiagnostics"

@@ -9,4 +9,5 @@ export * from "./rest.js";
 export * from "./sendLoop.js";
 export * from "./socketLoop.js";
 export * from "./state.js";
+export * from "./stateStore.js";
 export * from "./testing.js";

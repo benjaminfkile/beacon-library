@@ -38,6 +38,7 @@ export function createBeacon(opts: CreateBeaconOptions): Beacon {
   const rest = createRest({
     apiBaseUrl: opts.apiBaseUrl,
     key: opts.beaconKey,
+    state,
     ...(opts.fetchImpl ? { fetchImpl: opts.fetchImpl } : {}),
   });
   const buildHub = opts.buildHub ?? buildHubClient;

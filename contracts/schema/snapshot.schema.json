@@ -47,12 +47,6 @@
         "fundsPercent": {
           "type": "integer"
         },
-        "routeImageMediaId": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
         "flightHistory": {
           "type": [
             "object",
@@ -90,6 +84,123 @@
           },
           "additionalProperties": false
         },
+        "routeMap": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "path": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "lat": {
+                    "type": "number"
+                  },
+                  "lng": {
+                    "type": "number"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "timeline": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "minutes": {
+                    "type": "integer"
+                  },
+                  "lat": {
+                    "type": "number"
+                  },
+                  "lng": {
+                    "type": "number"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "durationMinutes": {
+              "type": "integer"
+            },
+            "timed": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "routeMapConfig": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "display": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "properties": {
+                "timeLabelIntervalMinutes": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "arrows": {
+                  "type": [
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "arrowSize": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "routeWidth": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "labelSize": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            "controls": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "properties": {
+                "fullscreen": {
+                  "type": [
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "terrain": {
+                  "type": [
+                    "boolean",
+                    "null"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
         "latestMessage": {
           "type": [
             "object",
@@ -102,21 +213,90 @@
             "body": {
               "type": "string"
             },
-            "eventTime": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "format": "date-time"
-            },
             "createdAt": {
               "type": "string",
               "format": "date-time"
             }
           },
           "additionalProperties": false
+        },
+        "trackerBbox": {
+          "type": "object",
+          "properties": {
+            "west": {
+              "type": "number"
+            },
+            "south": {
+              "type": "number"
+            },
+            "east": {
+              "type": "number"
+            },
+            "north": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": false
+        },
+        "trackerMap": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "id": {
+              "type": "integer"
+            },
+            "name": {
+              "type": "string"
+            },
+            "bbox": {
+              "type": "object",
+              "properties": {
+                "west": {
+                  "type": "number"
+                },
+                "south": {
+                  "type": "number"
+                },
+                "east": {
+                  "type": "number"
+                },
+                "north": {
+                  "type": "number"
+                }
+              },
+              "additionalProperties": false
+            },
+            "minZoom": {
+              "type": "integer"
+            },
+            "maxZoom": {
+              "type": "integer"
+            },
+            "terrainMaxZoom": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "tilesUrl": {
+              "type": "string"
+            },
+            "terrainUrl": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": false
         }
       },
+      "required": [
+        "trackerBbox",
+        "trackerMap"
+      ],
       "additionalProperties": false
     },
     "qrCodes": {
@@ -188,6 +368,12 @@
         "additionalProperties": false
       }
     },
+    "sponsorsYear": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
     "cookieTypes": {
       "type": "array",
       "items": {
@@ -210,7 +396,8 @@
               },
               "id": {
                 "type": "string"
-              }
+              },
+              "display": true
             },
             "additionalProperties": false
           },
@@ -259,6 +446,75 @@
               "string",
               "null"
             ]
+          },
+          "dark": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "url": {
+                "type": "string"
+              },
+              "variants": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          "invertInDark": {
+            "type": "boolean"
+          },
+          "small": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "url": {
+                "type": "string"
+              },
+              "variants": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "dark": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "url": {
+                    "type": "string"
+                  },
+                  "variants": {
+                    "$ref": "#/properties/media/additionalProperties/properties/dark/properties/variants"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "invertInDark": {
+                "type": "boolean"
+              }
+            },
+            "additionalProperties": false
+          },
+          "smallMediaId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "credit": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "additionalProperties": false
@@ -269,7 +525,106 @@
       "additionalProperties": {
         "type": "string"
       }
+    },
+    "trackerThemes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "renderer": {
+            "type": "string"
+          },
+          "key": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "styleUrl": {
+            "type": "string"
+          },
+          "spriteUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "thumbnailMediaId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "chrome": {
+            "type": "object",
+            "properties": {
+              "bg": {
+                "type": "string"
+              },
+              "fg": {
+                "type": "string"
+              },
+              "text": {
+                "type": "string"
+              },
+              "tile": {
+                "type": "string"
+              },
+              "tileFg": {
+                "type": "string"
+              },
+              "panel": {
+                "type": "string"
+              },
+              "accent": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          },
+          "overlay": {
+            "type": "object",
+            "properties": {
+              "routeColor": {
+                "type": "string"
+              },
+              "routeOpacity": {
+                "type": "number"
+              },
+              "arrowColor": {
+                "type": "string"
+              },
+              "timeLabelBg": {
+                "type": "string"
+              },
+              "timeLabelFg": {
+                "type": "string"
+              },
+              "timeLabelOpacity": {
+                "type": "number"
+              },
+              "userColor": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          },
+          "defaultLightMode": {
+            "type": "boolean"
+          },
+          "defaultDarkMode": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      }
     }
   },
+  "required": [
+    "trackerThemes"
+  ],
   "additionalProperties": false
 }

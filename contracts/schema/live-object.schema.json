@@ -91,6 +91,12 @@
     "publishedAt": {
       "type": "string",
       "format": "date-time"
+    },
+    "onlineCount": {
+      "type": [
+        "integer",
+        "null"
+      ]
     }
   },
   "additionalProperties": false

@@ -1,7 +1,7 @@
 {
   "name": "beacon-library",
-  "version": "1.1.0",
-  "description": "The WMSFO v2 beacon core for Node: hub socket loop, send loop, heartbeat loop, REST client, and the leader monitor.",
+  "version": "1.2.0",
+  "description": "The WMSFO v2 beacon core for Node: hub socket loop, send loop, heartbeat loop, REST client, leader monitor, and the state document store.",
   "license": "UNLICENSED",
   "type": "module",
   "engines": {
