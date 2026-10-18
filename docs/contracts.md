@@ -2626,7 +2626,7 @@ Two more beacons are services on the fleet, each its own repository with its own
 | Beacon | Repository | What it posts | Where its fixes come from |
 |---|---|---|---|
 | Simulator beacon | `simulator-beacon` (`docs/simulator-beacon.md`) | A past year's flight, replayed at a chosen speed, so a dev event set live shows a whole flight on the tracker | `GET /admin/events` and `GET /admin/events/{id}/locations` on the same API through a `wak_` key with the `events` capability (3.6); it posts through its enrolled `wbk_` key like any beacon |
-| Legacy beacon | `legacy-beacon` (`docs/legacy-beacon.md`) | Whatever the legacy Heroku tracker reports, normalized to the location body of 4.2, every second, in every mode | `GET https://santatracker-api.herokuapp.com/get?id=406santa` polled once per second |
+| Legacy beacon | `legacy-beacon` (`docs/legacy-beacon.md`) | Whatever the legacy Heroku tracker reports, normalized to the location body of 4.2, every second, in every mode | `GET https://<legacy-tracker-host>/get?id=<tracker id>` polled once per second |
 
 Both prefer the hub and fall back to HTTP per 9.2, heartbeat every 15 s with `health` and their own `debug` object per 4.2, and never give up. The simulator is a test beacon, never registered in prod: one service against the dev API and one control page, which signs in through the admin pool (3.1; platform.md 3.6, 4.2, and 8). The legacy beacon has no user interface.
 
