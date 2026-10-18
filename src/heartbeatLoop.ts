@@ -1,6 +1,7 @@
 // Heartbeat loop per contracts 9.2: every 15 s, HTTP only, whatever the socket
 // state. On 2xx: compute clockSkewMs from the request midpoint, store
-// liveEventId and isActive. On 401: mark the service revoked, keep every loop
+// liveEventId, isActive, and stateVersion (an answer without stateVersion
+// keeps the last one seen). On 401: mark the service revoked, keep every loop
 // running unchanged. Anything else leaves state unchanged and logs the code
 // and requestId when present.
 
@@ -56,6 +57,7 @@ export function startHeartbeatLoop(opts: HeartbeatLoopOptions): HeartbeatLoop {
           receivedAt: res.receivedAt,
           liveEventId: res.liveEventId,
           isActive: res.isActive,
+          stateVersion: res.stateVersion ?? state.lastHeartbeat?.stateVersion ?? null,
         };
         opts.onBeat?.(state.clockSkewMs);
       } else if (res.status === 401) {

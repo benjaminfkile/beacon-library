@@ -101,7 +101,7 @@ describe("heartbeat loop (contracts 9.2 + 4.2)", () => {
 
   it("leaves liveEventId, isActive, and clockSkewMs unchanged on other errors", async () => {
     const state = createBeaconState();
-    state.lastHeartbeat = { receivedAt: "prev", liveEventId: 7, isActive: true };
+    state.lastHeartbeat = { receivedAt: "prev", liveEventId: 7, isActive: true, stateVersion: null };
     state.clockSkewMs = 42;
     const rest = createFakeRest();
     rest.nextHeartbeat({
@@ -114,9 +114,54 @@ describe("heartbeat loop (contracts 9.2 + 4.2)", () => {
     });
     const loop = startHeartbeatLoop({ state, rest, intervalMs: 60_000 });
     await loop.tick();
-    expect(state.lastHeartbeat).toEqual({ receivedAt: "prev", liveEventId: 7, isActive: true });
+    expect(state.lastHeartbeat).toEqual({ receivedAt: "prev", liveEventId: 7, isActive: true, stateVersion: null });
     expect(state.clockSkewMs).toBe(42);
     expect(state.revoked).toBe(false);
+    loop.stop();
+  });
+
+  it("copies the answer's stateVersion to lastHeartbeat", async () => {
+    const state = createBeaconState();
+    const rest = createFakeRest();
+    const answer = {
+      ok: true as const,
+      status: 200,
+      receivedAt: "2026-12-22T01:31:07.100Z",
+      liveEventId: 7,
+      isActive: true,
+      serverTime: "2026-12-22T01:31:07.100Z",
+      tSendMs: 0,
+      tReceiveMs: 0,
+    };
+    rest.nextHeartbeat({ ...answer, stateVersion: 4 });
+    rest.nextHeartbeat({ ...answer, stateVersion: null });
+    const loop = startHeartbeatLoop({ state, rest, intervalMs: 60_000 });
+    expect(state.lastHeartbeat).toBeNull();
+    await loop.tick();
+    expect(state.lastHeartbeat?.stateVersion).toBe(4);
+    // An answer that does not carry stateVersion keeps the last one seen.
+    await loop.tick();
+    expect(state.lastHeartbeat?.stateVersion).toBe(4);
+    loop.stop();
+  });
+
+  it("a scripted answer without stateVersion reads the fake's current version", async () => {
+    const state = createBeaconState();
+    const rest = createFakeRest();
+    rest.setState({ mode: "replay" }, 3);
+    rest.nextHeartbeat({
+      ok: true,
+      status: 200,
+      receivedAt: "",
+      liveEventId: null,
+      isActive: false,
+      serverTime: "2026-12-22T01:31:07.100Z",
+      tSendMs: 0,
+      tReceiveMs: 0,
+    });
+    const loop = startHeartbeatLoop({ state, rest, intervalMs: 60_000 });
+    await loop.tick();
+    expect(state.lastHeartbeat?.stateVersion).toBe(3);
     loop.stop();
   });
 });

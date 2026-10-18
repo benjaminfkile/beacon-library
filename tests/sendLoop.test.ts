@@ -86,7 +86,7 @@ describe("send loop behaviour", () => {
     const s = createBeaconState();
     setLatestFix(s, FIX);
     s.socketState = "connected";
-    s.lastHeartbeat = { receivedAt: "", liveEventId: 7, isActive: true };
+    s.lastHeartbeat = { receivedAt: "", liveEventId: 7, isActive: true, stateVersion: null };
     const rest = createFakeRest();
     const hub = new FakeHubClient();
     const loop = startSendLoop({
@@ -162,7 +162,7 @@ describe("send loop behaviour", () => {
     const s = createBeaconState();
     setLatestFix(s, FIX);
     s.socketState = "reconnecting";
-    s.lastHeartbeat = { receivedAt: "", liveEventId: 7, isActive: true };
+    s.lastHeartbeat = { receivedAt: "", liveEventId: 7, isActive: true, stateVersion: null };
     const rest = createFakeRest();
     rest.nextLocation({
       ok: false,
@@ -191,7 +191,7 @@ describe("send loop behaviour", () => {
     // when the window ends.
     const s = createBeaconState();
     s.socketState = "reconnecting";
-    s.lastHeartbeat = { receivedAt: "", liveEventId: 7, isActive: true };
+    s.lastHeartbeat = { receivedAt: "", liveEventId: 7, isActive: true, stateVersion: null };
     const rest = createFakeRest();
     for (let i = 0; i < 3; i++) {
       rest.nextLocation({
@@ -240,7 +240,7 @@ describe("send loop behaviour", () => {
   it("HTTP window: a socket that connects during the window takes the fix (no HTTP)", async () => {
     const s = createBeaconState();
     s.socketState = "reconnecting";
-    s.lastHeartbeat = { receivedAt: "", liveEventId: 7, isActive: true };
+    s.lastHeartbeat = { receivedAt: "", liveEventId: 7, isActive: true, stateVersion: null };
     const rest = createFakeRest();
     rest.nextLocation({
       ok: true,
@@ -291,7 +291,7 @@ describe("send loop behaviour", () => {
   it("hub rejections without a live event never trigger onHubRejectionThreshold", async () => {
     const s = createBeaconState();
     s.socketState = "connected";
-    s.lastHeartbeat = { receivedAt: "", liveEventId: null, isActive: true };
+    s.lastHeartbeat = { receivedAt: "", liveEventId: null, isActive: true, stateVersion: null };
     const rest = createFakeRest();
     const hub = new FakeHubClient();
     let thresholdCount = 0;
@@ -320,7 +320,7 @@ describe("send loop behaviour", () => {
   it("three consecutive hub rejections trigger one onHubRejectionThreshold; a delivered send resets the counter", async () => {
     const s = createBeaconState();
     s.socketState = "connected";
-    s.lastHeartbeat = { receivedAt: "", liveEventId: 7, isActive: true };
+    s.lastHeartbeat = { receivedAt: "", liveEventId: 7, isActive: true, stateVersion: null };
     const rest = createFakeRest();
     const hub = new FakeHubClient();
     let thresholdCount = 0;
@@ -369,7 +369,7 @@ describe("send loop behaviour", () => {
     const s = createBeaconState();
     setLatestFix(s, FIX);
     s.socketState = "reconnecting";
-    s.lastHeartbeat = { receivedAt: "", liveEventId: 7, isActive: true };
+    s.lastHeartbeat = { receivedAt: "", liveEventId: 7, isActive: true, stateVersion: null };
     const rest = createFakeRest();
     for (let i = 0; i < 6; i++) {
       rest.nextLocation({

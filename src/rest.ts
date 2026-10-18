@@ -1,8 +1,12 @@
-// The two HTTP calls the beacon makes: POST /locations (fallback while the
-// socket is down) and POST /beacons/heartbeat (every 15 s, HTTP only). Both
-// carry X-Beacon-Key and lift serverTime, code, and requestId out of the
-// answer. tSend and tReceive are captured for the heartbeat's clock-skew
-// calculation.
+// The HTTP calls the beacon makes: POST /locations (fallback while the
+// socket is down), POST /beacons/heartbeat (every 15 s, HTTP only), and
+// GET and PUT /beacons/me/state (the beacon's state document, contracts 9.5).
+// Each carries X-Beacon-Key and lifts serverTime, code, and requestId out of
+// the answer. tSend and tReceive are captured for the heartbeat's clock-skew
+// calculation. A 401 on the state calls marks the given BeaconState revoked,
+// as the heartbeat loop does.
+
+import type { BeaconState } from "./state.js";
 
 export interface RestOptions {
   apiBaseUrl: string;
@@ -10,6 +14,7 @@ export interface RestOptions {
   fetchImpl?: typeof fetch;
   timeoutMs?: number;
   now?: () => number;
+  state?: BeaconState;
 }
 
 export interface LocationBody {
@@ -49,6 +54,7 @@ export interface HeartbeatResponse {
   receivedAt: string;
   liveEventId: number | null;
   isActive: boolean;
+  stateVersion: number | null;
   serverTime: string;
   tSendMs: number;
   tReceiveMs: number;
@@ -62,6 +68,24 @@ export interface RestError {
   requestId: string | null;
   serverTime: string | null;
   transportError?: string;
+  currentVersion?: number;
+}
+
+export interface GetStateResponse {
+  ok: true;
+  status: number;
+  state: Record<string, unknown> | null;
+  stateVersion: number;
+  updatedAt: string | null;
+  serverTime: string;
+}
+
+export interface PutStateResponse {
+  ok: true;
+  status: number;
+  stateVersion: number;
+  updatedAt: string;
+  serverTime: string;
 }
 
 async function callJson(
@@ -114,6 +138,14 @@ function readServerTime(body: unknown): string | null {
   if (!body || typeof body !== "object") return null;
   const b = body as Record<string, unknown>;
   return typeof b.serverTime === "string" ? b.serverTime : null;
+}
+
+function readDetailsStateVersion(body: unknown): number | null {
+  if (!body || typeof body !== "object") return null;
+  const d = (body as Record<string, unknown>).details;
+  if (!d || typeof d !== "object") return null;
+  const v = (d as Record<string, unknown>).stateVersion;
+  return typeof v === "number" ? v : null;
 }
 
 export function createRest(opts: RestOptions) {
@@ -219,13 +251,118 @@ export function createRest(opts: RestOptions) {
             ? null
             : null,
       isActive: b.isActive === true,
+      stateVersion: typeof b.stateVersion === "number" ? b.stateVersion : null,
       serverTime: typeof b.serverTime === "string" ? b.serverTime : "",
       tSendMs: tSend,
       tReceiveMs: tReceive,
     };
   }
 
-  return { postLocation, postHeartbeat };
+  async function getState(): Promise<GetStateResponse | RestError> {
+    const { res, body: resBody, transportError } = await callJson(
+      fetchImpl,
+      `${base}/beacons/me/state`,
+      {
+        method: "GET",
+        headers: {
+          "X-Beacon-Key": opts.key,
+        },
+      },
+      timeoutMs,
+    );
+    if (!res) {
+      return {
+        ok: false,
+        status: null,
+        code: null,
+        message: null,
+        requestId: null,
+        serverTime: null,
+        transportError,
+      };
+    }
+    if (!res.ok) {
+      if (res.status === 401 && opts.state) opts.state.revoked = true;
+      const e = readErrorFields(resBody);
+      return {
+        ok: false,
+        status: res.status,
+        code: e.code,
+        message: e.message,
+        requestId: e.requestId,
+        serverTime: readServerTime(resBody),
+      };
+    }
+    const b = (resBody ?? {}) as Record<string, unknown>;
+    return {
+      ok: true,
+      status: res.status,
+      state:
+        b.state && typeof b.state === "object" && !Array.isArray(b.state)
+          ? (b.state as Record<string, unknown>)
+          : null,
+      stateVersion: typeof b.stateVersion === "number" ? b.stateVersion : 0,
+      updatedAt: typeof b.updatedAt === "string" ? b.updatedAt : null,
+      serverTime: typeof b.serverTime === "string" ? b.serverTime : "",
+    };
+  }
+
+  async function putState(
+    state: object,
+    expectedVersion: number,
+  ): Promise<PutStateResponse | RestError> {
+    const { res, body: resBody, transportError } = await callJson(
+      fetchImpl,
+      `${base}/beacons/me/state`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Beacon-Key": opts.key,
+        },
+        body: JSON.stringify({ state, expectedVersion }),
+      },
+      timeoutMs,
+    );
+    if (!res) {
+      return {
+        ok: false,
+        status: null,
+        code: null,
+        message: null,
+        requestId: null,
+        serverTime: null,
+        transportError,
+      };
+    }
+    if (!res.ok) {
+      if (res.status === 401 && opts.state) opts.state.revoked = true;
+      const e = readErrorFields(resBody);
+      const err: RestError = {
+        ok: false,
+        status: res.status,
+        code: e.code,
+        message: e.message,
+        requestId: e.requestId,
+        serverTime: readServerTime(resBody),
+      };
+      if (res.status === 409 && e.code === "state_version_conflict") {
+        const v = readDetailsStateVersion(resBody);
+        if (v !== null) err.currentVersion = v;
+      }
+      return err;
+    }
+    const b = (resBody ?? {}) as Record<string, unknown>;
+    return {
+      ok: true,
+      status: res.status,
+      stateVersion: typeof b.stateVersion === "number" ? b.stateVersion : expectedVersion + 1,
+      updatedAt: typeof b.updatedAt === "string" ? b.updatedAt : "",
+      serverTime: typeof b.serverTime === "string" ? b.serverTime : "",
+    };
+  }
+
+  return { postLocation, postHeartbeat, getState, putState };
 }
 
 export type Rest = ReturnType<typeof createRest>;

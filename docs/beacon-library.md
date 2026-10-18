@@ -1,6 +1,6 @@
 # Beacon library: technical design
 
-The beacon library is the one Node implementation of the beacon contract (contracts 9.2): the hub socket loop that reconnects forever, the send loop that prefers the hub and falls back to HTTP, the heartbeat loop, the REST client, and the leader monitor of contracts 7.5. Every Node beacon on the fleet is built on it. It exists so the reconnect behaviour is written, tested, and fixed in one place instead of being copied between repositories by hand.
+The beacon library is the one Node implementation of the beacon contract (contracts 9.2): the hub socket loop that reconnects forever, the send loop that prefers the hub and falls back to HTTP, the heartbeat loop, the REST client, the leader monitor of contracts 7.5, and the store for the beacon's state document (contracts 9.5). Every Node beacon on the fleet is built on it. It exists so the reconnect behaviour is written, tested, and fixed in one place instead of being copied between repositories by hand.
 
 Every name, shape, path, and rule below is the one in the shared contracts (`docs/contracts.md`); the contract wins on any difference. Choices this document makes are in section 9; choices that need the owner are in section 10.
 
@@ -13,7 +13,7 @@ Every name, shape, path, and rule below is the one in the shared contracts (`doc
 | Runtime | Node 22, TypeScript strict, ES modules. One runtime dependency: `@microsoft/signalr` (WebSockets only, negotiation skipped). Native `fetch`. No logger dependency: the caller hands in a logger |
 | Package | `beacon-library`, built to `dist/` with type declarations; one entry point, `beacon-library` |
 | Distribution | A tarball from `npm pack`, attached to a GitHub release per version tag and vendored by each consumer (section 6) |
-| Tests | Vitest: the socket loop, the send loop decision table, the heartbeat loop against the vendored heartbeat schema, the hub URL mapping, the leader monitor, the facade, and the conformance scenarios (section 5) |
+| Tests | Vitest: the socket loop, the send loop decision table, the heartbeat loop against the vendored heartbeat schema, the REST client's state calls, the state store, the hub URL mapping, the leader monitor, the facade, and the conformance scenarios (section 5) |
 | Repository | `beacon-library`, branches `grunt`, `dev`, `main`; `contracts/` vendored with `CONTRACTS_SHA` and a contracts check (contracts 13); `docs/DESIGN.md` and `docs/contracts.md` are byte-identical copies of the originals in `wmsfo-api/docs` |
 
 ```
@@ -31,12 +31,13 @@ beacon-library/
     socketLoop.ts               connect, join, stay connected, reconnect forever (section 2)
     sendLoop.ts                 hub first, HTTP fallback, the re-join rule
     heartbeatLoop.ts            POST /beacons/heartbeat every 15 s
-    rest.ts                     POST /locations, /beacons/heartbeat, GET /beacons/me
+    rest.ts                     POST /locations, /beacons/heartbeat, GET and PUT /beacons/me/state
+    stateStore.ts               createStateStore: the beacon's state document with the conflict rule (section 4a)
     hub.ts                      the SignalR client behind the HubClient interface
     state.ts                    BeaconState, the latest fix, the counters the heartbeat reports
     backoff.ts                  1 s, 2 s, 3 s, 5 s, then 5 s forever; 10 s after a denied join
     leader.ts                   GET /internal/leader poll (contracts 7.5), 90 s expiry
-    testing.ts                  the fakes consumers' own tests use (a scripted HubClient, a recording Rest)
+    testing.ts                  the fakes consumers' own tests use (a scripted HubClient, a recording Rest with an in-memory state document)
   tests/
 ```
 
@@ -70,12 +71,13 @@ Everything is exported from the one entry point.
 |---|---|
 | `createBeacon`, `gateOnLeader` | the facade most beacons use (section 4) |
 | `createBeaconState`, `setLatestFix`, `hasUndeliveredFix`, `BeaconState`, `LatestFix` | the state a beacon's fix source writes into |
-| `createRest`, `Rest`, `LocationBody`, `HeartbeatBody`, `HealthCore`, `RestError` | the REST client, for a beacon that needs it directly |
+| `createRest`, `Rest`, `LocationBody`, `HeartbeatBody`, `HealthCore`, `RestError`, `GetStateResponse`, `PutStateResponse` | the REST client, for a beacon that needs it directly |
+| `createStateStore`, `StateStore`, `StateStoreOptions`, `StateSnapshot`, `StateStoreError`, `STATE_STORE_MAX_ATTEMPTS` | the beacon's state document (section 4a) |
 | `startSocketLoop`, `startSendLoop`, `startHeartbeatLoop`, `buildHubClient`, `HubClient`, `decide` | the loops, for a beacon that wires them itself |
 | `startLeader`, `Leader`, `LeaderOptions` | the leader monitor |
 | `backoffMs`, `BACKOFF_MS`, `JOIN_DENIED_FIRST_WAIT_MS`, `HTTP_FALLBACK_INTERVAL_MS`, `HUB_REJECTION_REJOIN_THRESHOLD` | the constants of contracts 9.2 |
 | `BeaconLogger` | `{ info, warn, error }`, each `(fields, msg)`; a pino logger satisfies it as is |
-| `FakeHubClient`, `createFakeRest` (from `testing.ts`, exported from the entry point) | fakes for consumers' tests: a scripted hub and a recording REST client |
+| `FakeHubClient`, `createFakeRest` (from `testing.ts`, exported from the entry point) | fakes for consumers' tests: a scripted hub and a recording REST client that serves a versioned state document (`state`, `stateVersion`, `setState`, `nextStateError`, `stateCalls`) with the API's conflict rule |
 
 Semantic versioning: a change to anything in this table that breaks a caller is a major version.
 
@@ -104,6 +106,34 @@ beacon.rest             // the REST client, for GET /beacons/me at boot
 `gateOnLeader({ leader: LeaderOptions, beacon, onStart?, onStop? })` starts the beacon when this node becomes leader and stops it when it stops being leader, calling `onStart` after the start and `onStop` before the stop so a beacon can start and stop its own fix source (a poller, a replay worker) with it. It returns the `Leader`, so the health probe can read `polledOnce()`.
 
 A beacon that needs something the facade does not offer uses the loops directly; the facade is built only from the public surface.
+
+The facade hands its `BeaconState` to the REST client, so a `401` on the state calls marks it `revoked` exactly as a `401` heartbeat does.
+
+---
+
+## 4a. The state store
+
+Each beacon has one JSON document the API keeps for it (contracts 4.2 and 9.5): `GET /beacons/me/state` reads it with its `stateVersion`, `PUT /beacons/me/state` writes it with the version it was based on as `expectedVersion`. It is how a restarted container, or a second instance that becomes leader, carries on from where the last one left off. The document is the only store of that state; a beacon keeps no copy of its own beside it. `createStateStore` is the one implementation of the read, change, and write cycle.
+
+```ts
+const store = createStateStore<ReplayState>({
+  rest: beacon.rest,
+  log,
+  empty: () => ({ mode: "idle", cursor: null }),   // the document before the first write
+  maxAttempts: 5,                                   // optional; writes per update, the first included
+});
+
+await store.load();                       // { state, version }; a null document reads as empty() at version 0
+store.current();                          // the last copy loaded or written, null before the first load
+await store.update((s) => { s.cursor = next; });   // mutate the copy, or return a new one
+await store.refreshIfBehind(beacon.state.lastHeartbeat?.stateVersion ?? null);
+```
+
+- The conflict rule. `update` applies the mutator to a deep copy of the current copy (loading first when there is none) and writes it with the version that copy was read at. A `409 state_version_conflict` means another writer got there first: the store reads the document again, applies the same mutator to the fresh copy, and writes with the new version, logging INFO `state conflict; retrying` with `{ attempt, currentVersion }`. After `maxAttempts` writes in all it rejects with an `Error` whose `code` is `state_conflict`. The mutator can run more than once, so it computes its change from the copy it is given.
+- Any other failure (no answer, a `5xx`, `401`, `413`, `429`) rejects with a `StateStoreError` carrying `code` (the API's code, `transport_error`, or `http_error`) and `status`, and leaves `current()` as it was. A final failure logs WARN `state write failed` with `{ code, status }`; a failed load logs `state read failed`. No line ever carries the document.
+- `load`, `update`, and `refreshIfBehind` run on one queue: a second `update` waits for the first, so two changes from the same process never conflict with each other.
+- `refreshIfBehind(version)`. The heartbeat answer carries `stateVersion`, which the heartbeat loop copies to `lastHeartbeat.stateVersion` (null until an answer carries it). Calling `refreshIfBehind` with it reloads when it is a number ahead of the current copy's version (or there is no copy yet) and does nothing otherwise, so a beacon picks up writes made by another instance without reading the document every beat. It never rejects; a failed reload is logged and the copy stays as it was.
+- A beacon loads at start and on every leader change (the `onStart` of `gateOnLeader`), before it acts on the document.
 
 ---
 

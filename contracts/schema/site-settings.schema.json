@@ -15,7 +15,9 @@
       "properties": {
         "snowDefault": { "type": "boolean" },
         "lightsDefault": { "type": "boolean" },
-        "ornaments": { "type": "boolean" }
+        "ornaments": { "type": "boolean" },
+        "cardOpacityLight": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/CardOpacity" },
+        "cardOpacityDark": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/CardOpacity" }
       },
       "required": ["snowDefault", "lightsDefault"],
       "additionalProperties": false
@@ -45,7 +47,66 @@
         { "type": "null" }
       ]
     },
-    "analyticsEnabled": { "type": "boolean" }
+    "analyticsEnabled": { "type": "boolean" },
+    "logoMedia": {
+      "oneOf": [
+        { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/MediaRef" },
+        { "type": "null" }
+      ]
+    },
+    "headerShowsSiteName": { "type": ["boolean", "null"] },
+    "headerLinks": {
+      "type": "array",
+      "items": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/Link" },
+      "minItems": 0,
+      "maxItems": 3
+    },
+    "landmarks": {
+      "type": "array",
+      "items": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/Landmark" },
+      "minItems": 0,
+      "maxItems": 50
+    },
+    "places": {
+      "type": "object",
+      "properties": {
+        "tracker": {
+          "type": "object",
+          "properties": {
+            "kinds": {
+              "type": "array",
+              "items": { "enum": ["attraction", "business", "government", "medical", "park", "place_of_worship", "school", "sports_complex", "transit"] },
+              "minItems": 0,
+              "maxItems": 9,
+              "uniqueItems": true
+            }
+          },
+          "required": ["kinds"],
+          "additionalProperties": false
+        },
+        "routeMap": {
+          "type": "object",
+          "properties": {
+            "kinds": {
+              "type": "array",
+              "maxItems": 100,
+              "items": { "type": "string", "minLength": 1, "maxLength": 50, "pattern": "^[a-z0-9_]+$" }
+            }
+          },
+          "required": ["kinds"],
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "tracker": {
+      "type": "object",
+      "properties": {
+        "defaultBbox": { "$ref": "https://wmsfo.dev/schema/primitives.schema.json#/$defs/Bbox" }
+      },
+      "required": ["defaultBbox"],
+      "additionalProperties": false
+    }
   },
   "required": [
     "siteName", "tagline", "homeNavLabel", "logo", "favicon", "theme",

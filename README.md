@@ -1,6 +1,6 @@
 # beacon-library
 
-The WMSFO v2 beacon core for Node: the hub socket loop that reconnects forever, the send loop (hub first, HTTP fallback), the heartbeat loop, the REST client, and the leader monitor. Every Node beacon on the fleet is built on it, so the reconnect behaviour lives in one place.
+The WMSFO v2 beacon core for Node: the hub socket loop that reconnects forever, the send loop (hub first, HTTP fallback), the heartbeat loop, the REST client, the leader monitor, and the state store (`createStateStore`) that reads and writes the beacon's state document with the version conflict rule, so a restarted container or a new leader carries on from the last saved state. Every Node beacon on the fleet is built on it, so the reconnect behaviour lives in one place.
 
 Read `docs/` before touching anything:
 

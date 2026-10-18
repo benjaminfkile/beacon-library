@@ -162,8 +162,6 @@
       "hasItems": false,
       "allowedRoles": ["live"],
       "defaults": {
-        "themes": ["standard", "expedition", "blizzard", "charcoal", "night", "nebula"],
-        "defaultTheme": "night",
         "defaultCenter": { "lat": 46.87, "lng": -114.0 },
         "defaultZoom": 11,
         "controls": {
@@ -233,13 +231,12 @@
     {
       "kind": "route_preview",
       "title": "Route preview",
-      "description": "This year's route poster as a linked picture or a pan-and-zoom viewer.",
+      "description": "The flight recording drawn as a map with a time slider.",
       "live": true,
       "hasItems": false,
       "allowedRoles": null,
       "defaults": {
         "heading": "This year's route",
-        "style": "image",
         "disclaimer": null,
         "emptyText": "The route will appear here once it is set."
       },

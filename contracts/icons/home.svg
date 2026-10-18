@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M5.5 10.5 V20 H18.5 V10.5" fill="currentColor" fill-opacity="0.14" />
+  <path d="M2.5 11.5 L12 3.5 L21.5 11.5 Z" fill="var(--icon-red, #e0524b)" />
+  <path d="M10 20 V15.5 a2 2 0 0 1 4 0 V20" fill="var(--icon-gold, #f0b32e)" />
+</svg>
