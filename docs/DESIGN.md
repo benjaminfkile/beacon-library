@@ -67,6 +67,8 @@ Payload the API expects (everything else is rejected with a 400 that says why):
 
 The admin panel's beacon page renders this live and colours the three health values out of range (battery under 20 %, no fix for 30 s, socket down) plus the API's own stamps (stale, heartbeat old). Telemetry is also the first thing debug mode shows on the phone itself.
 
+**Beacon state**: every beacon also has one JSON document the API keeps for it (`GET` and `PUT /beacons/me/state`), so a beacon service that restarts, or a second instance that becomes leader, picks up where the last one left off. The API stores it as written and never interprets it; a write names the version it read and is refused when another write got there first, so the beacon reads again and reapplies. Nothing in the admin panel or the snapshot shows it.
+
 Server stamps `received_at`, `beacon_id`, `event_id` (the live event), `seq` (arrival order, the only order that exists). No live event means 409, the update is not stored. `recordedAt` is informational: stored and shown, it never decides anything. The latest update received from the active beacon is Santa's location, whatever its timestamp says, and it fans out the moment it is stored.
 
 **Delivery** to the public site: the CDN for polling, the hub for the fast path. The API has no public read endpoint at all.
@@ -102,7 +104,7 @@ One beacon is **active** at a time, marked by the admin in the panel. Only its u
 | Actor | How | Can |
 |---|---|---|
 | Anyone | nothing | read the site, current event, sponsors, route poster, leave a contact message |
-| Beacon | key (header or hub credential) | post locations, heartbeats with its own debug data, and log files; every beacon is the same to the API, whatever runs behind the key |
+| Beacon | key (header or hub credential) | post locations, heartbeats with its own debug data, and log files; read and write its own state document; every beacon is the same to the API, whatever runs behind the key |
 | Script or agent | API key minted by an admin, with every capability or a chosen subset and an optional expiry | whatever its capabilities allow across the admin surface; never mint, list, or revoke keys |
 | Registered person | the env's Cognito pool, no MFA, email as username | manage alerts, leave cookies |
 | Editor | the env's admin pool, group `editor`, MFA enforced | pages, sections, media, icons, site settings, publish and versions, preview, sponsors |
@@ -305,6 +307,7 @@ Cut-over: freeze the old API, run the migration, point the site and the panel at
 - Site accounts (2026-09-12): the site's own themed auth pages over the Cognito API; the hosted UI is used only by the admin panel.
 - Two more beacons (2026-09-12): a simulator beacon (replays a past year, control page behind the admin pool) and a legacy beacon (polls the Heroku tracker), both fleet services and ordinary enrolled beacons.
 - Admin panel usability (2026-09-12): every editable row has an edit control; the flight recording upload shows the JSON shape it expects.
+- Beacon state (2026-10-18): one opaque JSON document per beacon, read and written by the beacon with a version check, so a restarted service or a new leader resumes where the last one stopped; the beacon keeps no second store of it.
 
 ## 11. Still open
 
