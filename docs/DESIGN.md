@@ -32,8 +32,8 @@ The API never calls Heroku, never polls anything, never asks who its peers are. 
 
 ```
 event_status (lookup)   1 planned, 2 scheduled, 3 live, 4 ended, 5 cancelled, 6 postponed
-event                   id, year, name, status_id, scheduled_at, went_live_at, ended_at, funds_percent, route_id, route_image_media_id, updated_at
-route                   id, name, s3_key, url, point_count, uploaded_by, created_at
+event                   id, year, name, status_id, scheduled_at, went_live_at, ended_at, funds_percent, updated_at
+route                   id, name, s3_key, url, point_count, uploaded_by, created_at   (the site settings name one: the site route)
 event_message           id, event_id, body, event_time, created_at   (the "event updates" of today)
 ```
 
@@ -85,15 +85,15 @@ The live object, the same bytes on both paths:
 
 - **Polling is CDN only.** On every stored update from the active beacon, and on every snapshot change, the node that took it writes the live object to one fixed key, `live/location.json`, with `Cache-Control: s-maxage=1, max-age=0`. The site polls that URL at `pollIntervalMs`. CloudFront collapses concurrent misses and, with Origin Shield on, the whole world costs S3 about one read per second. S3 is strongly consistent, so the object is readable the instant the PUT returns; worst-case staleness is the poll interval plus about 1.5 s. This is the live-video playlist pattern and it scales to any crowd without touching the fleet. At 100k pollers every 5 s for two hours the CloudFront bill is on the order of $150.
 - **Hub channel `wmsfo-api:location`** carries the same object as the fast path, published after every write of the live object. This is what the fleet is for: it gets scaled up to 10 or more large instances before the event, and more if needed. The hub's cost is memory per connection and fan-out per message, both linear in instances, so the pre-event scale-up is the capacity plan.
-- **The snapshot is a file on the CDN**, not an endpoint. It holds everything the site needs beyond the live point: the current event (id, year, name, status id, scheduled time, latest message), sponsors, funds percent, cookie types, `routeUrl`, the published content document (pages, sections, site settings, §6d), and the media map. Every admin write that touches any of it, and every content publish, rebuilds the snapshot JSON, writes it to the bucket under a content-hashed key (`snapshots/{sha256}.json`, one-year immutable cache header), and commits the new URL to the single-row `snapshot` table in the same transaction as the write (S3 first, then commit; if S3 fails the admin's write fails). A change is therefore just a new URL. No invalidation, ever, and the API never serves sponsor or event bytes to the public.
+- **The snapshot is a file on the CDN**, not an endpoint. It holds everything the site needs beyond the live point: the current event (id, year, name, status id, scheduled time, latest message), sponsors, funds percent, cookie types, the site route's route map and its display settings, the published content document (pages, sections, site settings, §6d), and the media map. Every admin write that touches any of it, and every content publish, rebuilds the snapshot JSON, writes it to the bucket under a content-hashed key (`snapshots/{sha256}.json`, one-year immutable cache header), and commits the new URL to the single-row `snapshot` table in the same transaction as the write (S3 first, then commit; if S3 fails the admin's write fails). A change is therefore just a new URL. No invalidation, ever, and the API never serves sponsor or event bytes to the public.
 
 How the site uses it: load, fetch `live/location.json` from the CDN, fetch `snapshotUrl` from the CDN, render. Then join the hub channel and keep polling the CDN at `pollIntervalMs` as the floor, tightened when hub events stop. `eventStatusId` is the switch: each status renders its own screen, and live is the map. When `snapshotUrl` changes, fetch the new one; that is how a new sponsor, a new message, or a funds update reaches every browser with the API serving nothing to the public.
 
 **Node cache and reconcile loop.** Each node keeps the live object in memory. Its reconcile loop, on a short tick like the gateway's, reads the single-row `snapshot` table (url, version) and the live event's id and status, and refreshes its copy when the version moved. Location writes go straight into memory on arrival (and to SQL for the record), then to `live/location.json` and the hub. The cookie tally is a handful of counters kept in memory, incremented on write and re-read by the loop. The node that took an admin write refreshes immediately and republishes the live object so the status change reaches the CDN and the hub without waiting for a location update.
 
-**The route the public sees is a poster.** The route page shows a high-resolution image of the planned route (the same kind of poster the old site showed) in a deep-zoom viewer with pan, zoom, and fullscreen, with a disclaimer that the plan changes on the night. The admin uploads it through the media library and links it to the event; at upload the API cuts a Deep Zoom tile pyramid beside the asset on the CDN, the snapshot carries the media id, and the viewer (OpenSeadragon, as on the legacy site) streams the tiles it needs at the zoom it is at, so a phone never downloads the whole poster. A new poster is a new asset with new URLs, so nothing is ever cached stale. Nothing draws planned points on a map.
+**The route the public sees is a map of the one site route.** The route is a site setting, not an event's: the site settings name one flight recording as the site route, with how its map is drawn, and every event shows it, in season and off season. The snapshot carries it processed for the site (a smoothed path with a 5 minute time slider) and the `route_preview` section draws it over the event's own map and themes (the current event's, else the newest event's), with a disclaimer that the plan changes on the night. The admin changes the route in Site settings and publishes; the panel's poster studio draws the same published route into printable posters, which are generated again after a change. No event and no poster carries a route, and the site never shows a poster.
 
-**Flight history rides in the snapshot.** A route JSON (`routes/{sha256}.json`, a `route` row linked from the event) is a recording of a flight: built from an event's stored locations, or uploaded. Red-Nose's replay mode, admin exports, and the end-to-end tests read it from the CDN. The tracker reads it from the snapshot: the recording linked to the current event is embedded as `event.flightHistory`, thinned to an admin-set point cap, so the first snapshot a browser fetches carries it and the "flight history" toggle draws it as a projected route with no second request. The admin links a different recording to the event at any time and the next snapshot carries that one. The tracker never draws where Santa has been; it shows only where he is. A new event inherits the recording of the most recent event that had one.
+**Flight history rides in the snapshot.** A route JSON (`routes/{sha256}.json` with its `route` row) is a recording of a flight: built from an event's stored locations, or uploaded. Red-Nose's replay mode, admin exports, and the end-to-end tests read it from the CDN. The tracker reads the site route from the snapshot: while an event is current it is embedded as `event.flightHistory`, thinned to an admin-set point cap, so the first snapshot a browser fetches carries it and the "flight history" toggle draws it as a projected route with no second request. The admin picks a different site route at any time and the next publish carries that one. The tracker never draws where Santa has been; it shows only where he is.
 
 Recorded locations stay in the database for the record and are available to an admin as an export (`GET /events/{id}/locations`, admin only). Nothing on the public site reads them.
 
@@ -103,7 +103,7 @@ One beacon is **active** at a time, marked by the admin in the panel. Only its u
 
 | Actor | How | Can |
 |---|---|---|
-| Anyone | nothing | read the site, current event, sponsors, route poster, leave a contact message |
+| Anyone | nothing | read the site, current event, sponsors, the site route's map, leave a contact message |
 | Beacon | key (header or hub credential) | post locations, heartbeats with its own debug data, and log files; read and write its own state document; every beacon is the same to the API, whatever runs behind the key |
 | Script or agent | API key minted by an admin, with every capability or a chosen subset and an optional expiry | whatever its capabilities allow across the admin surface; never mint, list, or revoke keys |
 | Registered person | the env's Cognito pool, no MFA, email as username | manage alerts, leave cookies |
@@ -202,7 +202,7 @@ The palette, each kind one React component plus one schema:
 | `map` | live | map styles offered, default style, controls and overlays on or off, default center and zoom; reads the live object and the event's embedded flight history; allowed only on the `live` page |
 | `leaderboard` | live | heading, variant `panel` or `full`; reads the tally and cookie types |
 | `sponsor_carousel`, `sponsor_grid` | live | heading, which logo size; read the sponsor list |
-| `route_preview` | live | heading, style `image` (a linked picture) or `viewer` (pan and zoom over the original), disclaimer; reads the event's route poster |
+| `route_preview` | live | heading, disclaimer, empty text; draws the site route's map with its time slider, in season and off season |
 | `cookie_control` | live | heading, copy; the leave-a-cookie control |
 | `alerts_signup` | live | heading, copy; the subscribe form |
 | `contact_form` | live | heading, copy, success text; posts to the API |
@@ -268,7 +268,7 @@ Rules the API follows: `evaluatedAt: null` or any request failure means "not lea
 
 One-off migration tool in the new repo, run once against a fresh database, idempotent so it can be rerun:
 
-- `flight_history` years 2020 to 2025 become `event` rows (status ended) plus `location` rows with a synthetic beacon "legacy". The 2025 rows are also written out as a route JSON to the bucket and linked as that event's `route`, so the first new event has a route to inherit.
+- `flight_history` years 2020 to 2025 become `event` rows (status ended) plus `location` rows with a synthetic beacon "legacy". The 2025 rows are also written out as a route JSON to the bucket and named as the site route in the site settings draft, so the first publish shows it.
 - `event_updates` become `event_message` rows on the matching year.
 - `sponsors`, `sponsor_years`, `sponsor_settings` map straight across; each legacy logo is imported into the media library as an asset with variants and linked from the sponsor.
 - `funds` latest per year lands on `event.funds_percent`.
@@ -296,18 +296,19 @@ Cut-over: freeze the old API, run the migration, point the site and the panel at
 - Red-Nose: React Native UI over a native Kotlin service, a dedicated rooted phone we own that meets the requirements in §6b, installed as a persistent system app through a Magisk module and provisioned entirely from the shell, websocket primary with HTTP fallback, retries capped at 5 s and never abandoned, latest fix only, nothing stored on the phone.
 - Public site: full rewrite as a Vite + React + TypeScript static SPA on Vercel (§6c), Google Maps stays.
 - Visual design (2026-09-11): North Pole Night direction, light/dark/system as the only visitor theme control, Plex Sans and Mono with Bricolage Grotesque headings, hand-rolled CSS with tokens and a contrast test, no UI library on the public site, library icons inline. The accent, surface, and font-pairing site settings and the per-visitor theme chips are gone.
-- Route: the public route is a poster image in a pan-and-zoom viewer; the route JSON is a flight recording, read from the CDN by replay and tests and embedded in the snapshot as the event's flight history for the tracker's projected-route toggle; the tracker shows only Santa's current position, never a trail.
+- Route: the public route is a map of the one site route, a site setting; the route JSON is a flight recording, read from the CDN by replay and tests and embedded in the snapshot for the route map and, while an event is current, as the flight history for the tracker's projected-route toggle; the tracker shows only Santa's current position, never a trail.
 - Sponsors: no tiers; largest gift first; tracker time proportional to the gift; per-year pin order and time override in the panel.
 - API keys: `wak_` keys with every capability or a chosen subset and an optional expiry, minted by a TOTP admin, reaching every admin group but the key endpoints.
 - Admin panel moves to Vite alongside the Cognito rewiring.
 - Beacons (2026-09-12): no roles. A beacon is a key; its heartbeat carries a tiny typed health core plus a free debug object the panel shows as a JSON tree; logs are open to every beacon; Red-Nose's debug mode is always available on the phone.
 - Go-live gate (2026-09-12): an event goes live only with a healthy active beacon (heard from within the stale window; the socket is not required).
 - Cookies (2026-09-12): no moderation, no admin cookie view; a cookie type can be deleted while nothing references it.
-- Route poster (2026-09-12): a Deep Zoom tile pyramid cut at upload and served from the CDN; the site's viewer is OpenSeadragon with fullscreen.
+- Large images (2026-09-12): a Deep Zoom tile pyramid cut at upload and served from the CDN; the site's viewer is OpenSeadragon with fullscreen.
 - Site accounts (2026-09-12): the site's own themed auth pages over the Cognito API; the hosted UI is used only by the admin panel.
 - Two more beacons (2026-09-12): a simulator beacon (replays a past year, control page behind the admin pool) and a legacy beacon (polls the Heroku tracker), both fleet services and ordinary enrolled beacons.
 - Admin panel usability (2026-09-12): every editable row has an edit control; the flight recording upload shows the JSON shape it expects.
 - Beacon state (2026-10-18): one opaque JSON document per beacon, read and written by the beacon with a version check, so a restarted service or a new leader resumes where the last one stopped; the beacon keeps no second store of it.
+- One site route (2026-10-18): the route is a default setting on the site, not on each event or poster; events and posters inherit it, and changing it later is a settings edit, a publish, and new posters.
 
 ## 11. Still open
 
