@@ -114,7 +114,7 @@ Rules that never bend: every public page works logged out; sign-up is a small li
 
 ## 6. Optional accounts
 
-**Alerts.** Email only for year one. `subscriber` (person_id, channel, address, verified_at, unsubscribed_at) keeps a `channel` column so SMS can be added without a schema change. Subscribe means: verify the address once, then receive an email when an event is scheduled, goes live, or posts an update. Every email has a one-click unsubscribe link. Send fan-out runs as a leader chore off the outbox so a fleet of two never double sends.
+**Alerts.** Email only for year one. `subscriber` (person_id, channel, address, verified_at, unsubscribed_at) keeps a `channel` column so SMS can be added without a schema change. Subscribe means: verify the address once, by the account's sign-up code when it is the account's own address and by the token email otherwise, then receive an email when an event is scheduled, goes live, or posts an update. Every email has a one-click unsubscribe link. Send fan-out runs as a leader chore off the outbox so a fleet of two never double sends.
 
 Cost reference at the scale we are planning for (100k visitors, 20k accounts, 3 messages each, 60k sends). Email is the only row that applies this year:
 
