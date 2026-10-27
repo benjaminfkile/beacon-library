@@ -2449,7 +2449,7 @@ Only `PUT /admin/settings/{key}` changes a value. A missing row means the defaul
 
 ### 7.2 Location write (either door)
 
-Before the transaction (per-node, in memory): the node keeps `lastAcceptedAt` per beacon id. Let `effective = beacon.min_interval_ms when set else location_min_interval_ms`. When `now - lastAcceptedAt < effective` the fix is dropped: no transaction, no live object, no publish; the node increments a per-beacon drop counter and flushes those counts into `beacon.fixes_rate_limited` at most once every 5 s per beacon (one update per beacon with drops). The dropped response is `201 { seq, published, receivedAt, serverTime, outcome: "dropped" }` where `seq` is the last seq this node accepted from that beacon (or 0), `published` is the beacon's flag from the auth lookup, `receivedAt` is now. The `LocationPublished` metric filter keys on outcome `stored` (api.md 16).
+Before the transaction (per-node, in memory): the node keeps `lastAcceptedAt` per beacon id. Let `effective = beacon.min_interval_ms when set else location_min_interval_ms`. When `now - lastAcceptedAt < effective` the fix is dropped: no transaction, no live object, no publish; the node increments a per-beacon drop counter and flushes those counts into `beacon.fixes_rate_limited` at most once every 5 s per beacon (one update per beacon with drops). The dropped response is `201 { seq, published, receivedAt, serverTime, outcome: "dropped" }` where `seq` is the last seq this node accepted from that beacon (or 0), `published` is the beacon's flag from the auth lookup, `receivedAt` is now. The `LocationPublished` metric filter counts published fixes with outcome `stored` or `carried` (api.md 16).
 
 ```
 begin;
