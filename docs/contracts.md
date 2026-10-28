@@ -2708,9 +2708,9 @@ The site fetches `VITE_CDN_BASE_URL + "/live/location.json"` and otherwise only 
 | `REDNOSE_HTTP_FALLBACK_INTERVAL_MS` | 1000 (the least time between two HTTP sends while the socket is down) |
 | `REDNOSE_BACKOFF_MS` | `1000,2000,3000,5000` (the last value repeats forever) |
 | `REDNOSE_LOG_RING_BYTES` | 2,000,000 |
-| `REDNOSE_PROD_API_BASE_URL` | The prod API base URL, present in both flavours; replay (9.4) is offered only when the enrolled `apiBaseUrl` differs from it. |
+| `REDNOSE_PROD_API_BASE_URL` | The prod API base URL, present in both flavours; replay (9.4) is offered only when the enrolled `apiBaseUrl` differs from it. Enrollment admits only the flavour's own API through it: the prod flavour accepts an `api` whose origin (scheme, host, port) equals this value's, the dev flavour accepts any other origin and never this one (9.1); a code for the other flavour is refused before any request. |
 
-Runtime-stored fields (Keystore-backed `EncryptedSharedPreferences`), written by enrollment or typed by hand: `apiBaseUrl`, `hubUrl`, `ingestChannel`, `beaconId`, `name`, `key`, `gpsOnlyFallback` (bool, default false). Dev builds allow cleartext HTTP for a LAN API through the Android network security config; release builds do not.
+Runtime-stored fields (Keystore-backed `EncryptedSharedPreferences`), written by enrollment or typed by hand: `apiBaseUrl`, `hubUrl`, `ingestChannel`, `beaconId`, `name`, `key`, `gpsOnlyFallback` (bool, default false). The dev flavour's application id carries the suffix `.dev` and its launcher label is RedNose-DEV, so both flavours install on one phone side by side, each with its own enrollment. Dev builds allow cleartext HTTP for a LAN API through the Android network security config; release builds do not.
 
 ### 8.6 Platform pieces the contracts assume
 
